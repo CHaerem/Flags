@@ -23,8 +23,9 @@ from io import BytesIO
 from urllib.request import urlopen
 from PIL import Image
 
-CACHE_FILE = "/home/chris/country_cache.json"
-FLAG_CACHE_DIR = "/home/chris/flag_cache"
+# Update paths to use relative paths in the current directory
+CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "country_cache.json")
+FLAG_CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "flag_cache")
 
 def load_cache():
     if os.path.exists(CACHE_FILE):
