@@ -22,53 +22,25 @@ def prepare_country_data():
         # Create the data directory if it doesn't exist
         os.makedirs(static_data_dir, exist_ok=True)
         
-        # Load the country data
+        # Load the country data - already in dictionary format
         with open(cache_path, 'r', encoding='utf-8') as f:
-            countries = json.load(f)
-            
-        # Create dictionaries for different lookup methods
-        country_dict = {}  # indexed by common name
-        country_by_code = {}  # indexed by country code (cca2)
+            country_dict = json.load(f)
         
-        for country in countries:
-            if 'name' in country and 'common' in country['name']:
-                country_name = country['name']['common']
-                
-                # Extract essential data fields
-                country_data = {
-                    'name': country['name'],
-                    'flag': country.get('flag', ''),  # emoji flag
-                    'flags': country.get('flags', {}),  # flag images
-                    'capital': country.get('capital', []),
-                    'region': country.get('region', ''),
-                    'subregion': country.get('subregion', ''),
-                    'population': country.get('population', 0),
-                    'languages': country.get('languages', {}),
-                    'currencies': country.get('currencies', {}),
-                    'timezones': country.get('timezones', []),
-                    'cca2': country.get('cca2', ''),
-                    'cca3': country.get('cca3', ''),
-                }
-                
-                # Add to dictionaries
-                country_dict[country_name] = country_data
-                
-                # If country code is available, also index by it
-                if 'cca2' in country:
-                    country_by_code[country['cca2'].lower()] = country_data
-        
-        # Save processed data to static directory
+        # Save processed data to static directory (ensure countries.json matches country_cache.json)
         with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(country_dict, f, ensure_ascii=False, indent=2)
             
         # Create a default flag.json if it doesn't exist (for initial load)
         if not os.path.exists(flag_output_path):
             # Use Norway as default if available, otherwise first country
-            default_country = country_dict.get('Norway', next(iter(country_dict.values())))
+            country_name = 'Norway' if 'Norway' in country_dict else next(iter(country_dict))
+            default_country = country_dict[country_name]
+            
             default_flag = {
-                'country': default_country['name']['common'],
-                'flag': default_country['flag'],
-                'updated': '',  # Will be filled by the display script
+                'country': country_name,
+                'info': f"Capital: {default_country['capital'][0] if default_country['capital'] else '-'}",
+                'emoji': default_country['flag'],
+                'timestamp': '',  # Will be filled by the display script
             }
             
             with open(flag_output_path, 'w', encoding='utf-8') as f:

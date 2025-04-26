@@ -20,6 +20,44 @@
 			</div>
 
 			<div id="content-container" style="display: none">
+				<!-- Flag information display -->
+				<div class="flag-display">
+					<div class="flag-header">
+						<span id="emoji" class="flag-emoji"></span>
+						<h1 id="country" class="country-name"></h1>
+					</div>
+
+					<div class="country-info">
+						<div class="info-row">
+							<span class="label">Capital:</span>
+							<span id="capital" class="value">-</span>
+						</div>
+						<div class="info-row">
+							<span class="label">Population:</span>
+							<span id="population" class="value">-</span>
+						</div>
+						<div class="info-row">
+							<span class="label">Region:</span>
+							<span id="region" class="value">-</span>
+						</div>
+						<div class="info-row">
+							<span class="label">Languages:</span>
+							<span id="languages" class="value">-</span>
+						</div>
+						<div class="info-row">
+							<span class="label">Currency:</span>
+							<span id="currency" class="value">-</span>
+						</div>
+						<div class="info-row">
+							<span class="label">Timezones:</span>
+							<span id="timezones" class="value">-</span>
+						</div>
+						<div class="info-row timestamp-row">
+							<span id="timestamp" class="timestamp">Updated: -</span>
+						</div>
+					</div>
+				</div>
+
 				<!-- Flag change form -->
 				<div id="flag-changer" class="flag-changer">
 					<h2>Change Flag</h2>
@@ -34,51 +72,10 @@
 					<button id="change-flag-btn" class="btn">Update Flag</button>
 					<div id="status-message" class="status-message hidden"></div>
 				</div>
-
-				<div class="card">
-					<div class="flag-info">
-						<div id="emoji"></div>
-						<h1 id="country">Loading...</h1>
-
-						<div class="country-info">
-							<div class="info-item">
-								<div class="info-label">Capital:</div>
-								<div id="capital" class="info-value">-</div>
-							</div>
-							<div class="info-item">
-								<div class="info-label">Population:</div>
-								<div id="population" class="info-value">-</div>
-							</div>
-							<div class="info-item">
-								<div class="info-label">Region:</div>
-								<div id="region" class="info-value">-</div>
-							</div>
-							<div class="info-item">
-								<div class="info-label">Languages:</div>
-								<div id="languages" class="info-value">-</div>
-							</div>
-							<div class="info-item">
-								<div class="info-label">Currency:</div>
-								<div id="currency" class="info-value">-</div>
-							</div>
-							<div class="info-item">
-								<div class="info-label">Time Zones:</div>
-								<div id="timezones" class="info-value">-</div>
-							</div>
-						</div>
-
-						<p id="timestamp"></p>
-					</div>
-				</div>
 			</div>
 		</div>
 
-		<footer>
-			Created by Christopher Hærem |
-			<a href="https://github.com/CHaerem">GitHub</a>
-		</footer>
-
-		<!-- Load JavaScript modules in correct order -->
+		<!-- JavaScript -->
 		<script src="{{ url_for('static', filename='js/api.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/ui.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/app.js') }}"></script>
