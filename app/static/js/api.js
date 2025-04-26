@@ -6,7 +6,7 @@
 const FlagAPI = (function () {
 	// Cache for country data after it's loaded
 	let countryDataCache = null;
-	
+
 	/**
 	 * Fetch flag data from local JSON file
 	 * @returns {Promise<Object>} Flag data object
@@ -25,7 +25,7 @@ const FlagAPI = (function () {
 			throw error;
 		}
 	}
-	
+
 	/**
 	 * Loads all country data once and caches it
 	 * @returns {Promise<Object>} Dictionary of all countries
@@ -34,15 +34,17 @@ const FlagAPI = (function () {
 		if (countryDataCache) {
 			return countryDataCache;
 		}
-		
+
 		try {
 			// Add cache-busting timestamp to prevent browser caching during development
 			const timestamp = new Date().getTime();
-			const response = await fetch(`/static/data/countries.json?_=${timestamp}`);
+			const response = await fetch(
+				`/static/data/countries.json?_=${timestamp}`
+			);
 			if (!response.ok) {
 				throw new Error(`HTTP error! Status: ${response.status}`);
 			}
-			
+
 			countryDataCache = await response.json();
 			return countryDataCache;
 		} catch (error) {
@@ -59,12 +61,12 @@ const FlagAPI = (function () {
 	async function fetchCountryData(countryName) {
 		try {
 			const countries = await loadAllCountryData();
-			
+
 			// First try direct match
 			if (countries[countryName]) {
 				return countries[countryName];
 			}
-			
+
 			// If not found, try case insensitive match
 			const countryNameLower = countryName.toLowerCase();
 			for (const [name, data] of Object.entries(countries)) {
@@ -72,15 +74,17 @@ const FlagAPI = (function () {
 					return data;
 				}
 			}
-			
+
 			// If still not found, try partial match
 			for (const [name, data] of Object.entries(countries)) {
-				if (name.toLowerCase().includes(countryNameLower) || 
-					countryNameLower.includes(name.toLowerCase())) {
+				if (
+					name.toLowerCase().includes(countryNameLower) ||
+					countryNameLower.includes(name.toLowerCase())
+				) {
 					return data;
 				}
 			}
-			
+
 			console.warn(`Country not found: ${countryName}`);
 			return null;
 		} catch (error) {

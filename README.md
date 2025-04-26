@@ -165,21 +165,25 @@ To deploy the flag display application to your Raspberry Pi:
 1. Copy all project files to your Pi (e.g., `/home/chris/Flags/`)
 
 2. Install required dependencies:
+
    ```bash
    pip3 install -r requirements.txt
    ```
 
 3. Make sure the startup script is executable:
+
    ```bash
    chmod +x run.py
    ```
 
 4. Test that the application runs correctly:
+
    ```bash
    python3 run.py
    ```
 
 5. Install the systemd service:
+
    ```bash
    sudo cp config/flag-api.service /etc/systemd/system/
    sudo systemctl daemon-reload
@@ -188,6 +192,7 @@ To deploy the flag display application to your Raspberry Pi:
    ```
 
 6. Check the service status:
+
    ```bash
    sudo systemctl status flag-api.service
    ```
@@ -209,11 +214,13 @@ If you need to update the application:
 If the application isn't working as expected:
 
 1. Check the service logs:
+
    ```bash
    sudo journalctl -u flag-api.service -n 50
    ```
 
 2. Check if the service is running:
+
    ```bash
    sudo systemctl status flag-api.service
    ```
