@@ -136,7 +136,7 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Function to change the flag via Flask API
 	async function changeFlag(countryName) {
 		try {
-			const flaskApiUrl = `https://smartpi.local:5000/change-flag?country=${encodeURIComponent(
+			const flaskApiUrl = `https://smartpi.loca.lt/change-flag?country=${encodeURIComponent(
 				countryName
 			)}`;
 
