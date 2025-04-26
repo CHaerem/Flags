@@ -19,12 +19,12 @@ document.addEventListener("DOMContentLoaded", () => {
 	const changeFlagBtn = document.getElementById("change-flag-btn");
 	const statusMessage = document.getElementById("status-message");
 
-	// Fetch flag data from local JSON
+	// Fetch flag data from data JSON
 	async function fetchLocalFlagData() {
 		try {
 			// Add cache-busting timestamp to prevent browser caching
 			const timestamp = new Date().getTime();
-			const response = await fetch(`data/flag.json?_=${timestamp}`);
+			const response = await fetch(`/static/data/flag.json?_=${timestamp}`);
 			if (!response.ok) {
 				throw new Error(`HTTP error! Status: ${response.status}`);
 			}
@@ -136,7 +136,6 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Function to change the flag via Flask API
 	async function changeFlag(countryName) {
 		try {
-			// Use relative URL since we're now hosting directly through Flask
 			const flaskApiUrl = `/change-flag?country=${encodeURIComponent(
 				countryName
 			)}`;

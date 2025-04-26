@@ -23,7 +23,10 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Paths (all inside your repo)
 CACHE_FILE     = os.path.join(BASE_DIR, "country_cache.json")
 FLAG_CACHE_DIR = os.path.join(BASE_DIR, "flag_cache")
+# Original GitHub Pages path
 FLAG_INFO_PATH = os.path.join(BASE_DIR, "docs", "data", "flag.json")
+# New Flask app path
+NEW_FLAG_INFO_PATH = os.path.join(BASE_DIR, "app", "static", "data", "flag.json")
 
 
 def load_cache():
@@ -91,17 +94,24 @@ def update_flag_metadata(country):
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
     }
 
-    # Ensure docs/data exists, then write JSON
+    # Ensure original docs/data exists, then write JSON (for backward compatibility)
     os.makedirs(os.path.dirname(FLAG_INFO_PATH), exist_ok=True)
     with open(FLAG_INFO_PATH, 'w') as f:
         json.dump(info, f, indent=2)
     logging.info("Wrote metadata to %s", FLAG_INFO_PATH)
 
+    # Also ensure app/static/data exists, then write JSON (for new Flask structure)
+    os.makedirs(os.path.dirname(NEW_FLAG_INFO_PATH), exist_ok=True)
+    with open(NEW_FLAG_INFO_PATH, 'w') as f:
+        json.dump(info, f, indent=2)
+    logging.info("Wrote metadata to %s", NEW_FLAG_INFO_PATH)
+
     # Now commit & push from repo root
     repo = BASE_DIR
+    # Add both files to git
     subprocess.run([
         "sudo", "-u", "chris", "git", "-C", repo,
-        "add", "docs/data/flag.json"
+        "add", "docs/data/flag.json", "app/static/data/flag.json"
     ], check=True)
     subprocess.run([
         "sudo", "-u", "chris", "git", "-C", repo,
@@ -115,7 +125,7 @@ def update_flag_metadata(country):
         "sudo", "-u", "chris", "git", "-C", repo,
         "push", "origin", "main"
     ], check=True)
-    logging.info("Pushed flag metadata to GitHub Pages")
+    logging.info("Pushed flag metadata to GitHub")
 
 def display_flag(epd, country_name=None):
     logging.info("Displaying flag...")

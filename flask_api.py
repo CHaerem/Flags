@@ -3,26 +3,52 @@
 
 import os
 import subprocess
-from flask import Flask, request, make_response, jsonify
+from flask import Flask, request, make_response, jsonify, send_from_directory
 from flask_cors import CORS
 
 # Import the certificate generation function
 from generate_cert import generate_self_signed_cert, cert_path, key_path
 
-app = Flask(__name__)
-# Allow GitHub Pages origins to make XHR/Fetch calls
+# Get the base directory of the project
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Path to docs directory containing static files
+DOCS_DIR = os.path.join(BASE_DIR, 'docs')
+
+app = Flask(__name__, static_folder=None)  # Disable default static folder
+
+# Configure CORS to allow access from any origin since we're self-hosting now
 CORS(app,
-     resources={r"/change-flag": {"origins": ["https://chaerem.github.io", "https://*.github.io"]}},
+     resources={r"/change-flag": {"origins": "*"}},
      methods=["POST", "OPTIONS"],
      allow_headers=["Content-Type"],
      supports_credentials=False)
 
-@app.route("/", methods=["GET"])
+# Serve static files from docs directory
+@app.route('/', defaults={'path': 'index.html'})
+@app.route('/<path:path>')
+def serve_static(path):
+    # Special case for flag data JSON
+    if path == 'data/flag.json':
+        try:
+            return send_from_directory(os.path.join(DOCS_DIR, 'data'), 'flag.json')
+        except FileNotFoundError:
+            return jsonify({"error": "Flag data not found"}), 404
+    
+    # Serve other static files
+    try:
+        return send_from_directory(DOCS_DIR, path)
+    except FileNotFoundError:
+        # Try to serve index.html as fallback for SPA routing
+        if not path.startswith(('assets/', 'data/', 'static/')):
+            return send_from_directory(DOCS_DIR, 'index.html')
+        return jsonify({"error": f"File not found: {path}"}), 404
+
+@app.route("/health", methods=["GET"])
 def health_check():
     """Health check endpoint that helps users to accept the certificate"""
     return jsonify({
         "status": "ok",
-        "message": "API is running. If you're seeing this page, you can now return to the GitHub Pages site and use it.",
+        "message": "API is running. Static site is now served directly from this Flask application.",
         "info": "This page helps your browser accept the self-signed certificate."
     })
 
@@ -33,7 +59,7 @@ def change_flag():
         resp = make_response(("", 204))
         resp.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
         resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
-        resp.headers["Access-Control-Allow-Origin"] = "https://chaerem.github.io"
+        resp.headers["Access-Control-Allow-Origin"] = "*"  # Allow any origin since we're self-hosting
         return resp
 
     country = request.args.get("country")
@@ -46,7 +72,7 @@ def change_flag():
     if proc.returncode != 0:
         return f"Error: {proc.stderr.strip()}", 500
     resp = make_response(f"Flag changed to {country}", 200)
-    resp.headers["Access-Control-Allow-Origin"] = "https://chaerem.github.io"
+    resp.headers["Access-Control-Allow-Origin"] = "*"  # Allow any origin since we're self-hosting
     return resp
 
 if __name__ == "__main__":
