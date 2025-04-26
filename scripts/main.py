@@ -97,27 +97,6 @@ def update_flag_metadata(country):
         json.dump(info, f, indent=2)
     logging.info("Wrote metadata to %s", FLAG_INFO_PATH)
 
-    # Git operations (optional - can be removed if not needed)
-    repo = BASE_DIR
-    # Add file to git
-    subprocess.run([
-        "sudo", "-u", "chris", "git", "-C", repo,
-        "add", "app/static/data/flag.json"
-    ], check=True)
-    subprocess.run([
-        "sudo", "-u", "chris", "git", "-C", repo,
-        "commit", "-m", f"Update flag: {info['country']}"
-    ], check=True)
-    subprocess.run([
-        "sudo", "-u", "chris", "git", "-C", repo,
-        "pull", "--rebase", "--autostash", "origin", "main"
-    ], check=True)
-    subprocess.run([
-        "sudo", "-u", "chris", "git", "-C", repo,
-        "push", "origin", "main"
-    ], check=True)
-    logging.info("Pushed flag metadata to GitHub")
-
 def display_flag(epd, country_name=None):
     logging.info("Displaying flag...")
 
