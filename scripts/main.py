@@ -42,7 +42,8 @@ def get_country_data():
         logging.info("Loaded country data from cache")
         return cache
 
-    url = "https://restcountries.com/v3.1/all?fields=name,flags,capital,flag"
+    # Update the API request to include all the fields we need for the UI display
+    url = "https://restcountries.com/v3.1/all?fields=name,flags,capital,flag,population,region,subregion,languages,currencies,timezones"
     resp = requests.get(url)
     resp.raise_for_status()
     data = resp.json()
@@ -83,13 +84,27 @@ def get_country_by_name(data, name):
     return None
 
 def update_flag_metadata(country):
-    # Build the metadata
+    # Build the metadata with comprehensive country information
     info = {
         "country": country['name']['common'],
         "info": f"Capital: {country.get('capital', ['Unknown'])[0]}",
         "emoji": country.get('flag', ''),
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
     }
+    
+    # Check if the country has extended information and add it to the metadata
+    if 'population' in country:
+        info['population'] = country['population']
+    if 'region' in country:
+        info['region'] = country['region']
+    if 'subregion' in country:
+        info['subregion'] = country['subregion']
+    if 'languages' in country:
+        info['languages'] = country['languages']
+    if 'currencies' in country:
+        info['currencies'] = country['currencies']
+    if 'timezones' in country:
+        info['timezones'] = country['timezones']
 
     # Ensure the directory exists, then write JSON
     os.makedirs(os.path.dirname(FLAG_INFO_PATH), exist_ok=True)
