@@ -2,9 +2,14 @@
 # -*- coding:utf-8 -*-
 
 import os
-from app import create_app
+import sys
 
-# Import the certificate generation function
+# Add scripts directory to path so we can import from it
+current_dir = os.path.dirname(os.path.abspath(__file__))
+scripts_dir = os.path.join(current_dir, "scripts")
+sys.path.append(scripts_dir)
+
+from app import create_app
 from generate_cert import generate_self_signed_cert, cert_path, key_path
 
 # Create the Flask application

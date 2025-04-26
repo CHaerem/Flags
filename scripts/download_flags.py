@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import os
 import requests
@@ -5,8 +7,10 @@ import json
 from io import BytesIO
 from PIL import Image
 
-CACHE_FILE = "/home/chris/country_cache.json"
-FLAG_CACHE_DIR = "/home/chris/flag_cache"
+# Base directory of this project (~/Flags)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CACHE_FILE = os.path.join(BASE_DIR, "country_cache.json")
+FLAG_CACHE_DIR = os.path.join(BASE_DIR, "flag_cache")
 
 def load_cache():
     if os.path.exists(CACHE_FILE):

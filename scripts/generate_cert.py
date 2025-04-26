@@ -5,8 +5,9 @@ import os
 import subprocess
 from datetime import datetime, timedelta
 
-# Define certificate paths
-cert_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "certs")
+# Define certificate paths relative to project root
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+cert_dir = os.path.join(BASE_DIR, "certs")
 cert_path = os.path.join(cert_dir, "cert.pem")
 key_path = os.path.join(cert_dir, "key.pem")
 

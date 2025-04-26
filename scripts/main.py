@@ -17,16 +17,13 @@ from waveshare_epd import epd7in3f
 
 logging.basicConfig(level=logging.DEBUG)
 
-# Base directory of this script (~/Flags)
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+# Base directory of this project (~/Flags)
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Paths (all inside your repo)
+# Paths for the new structure
 CACHE_FILE     = os.path.join(BASE_DIR, "country_cache.json")
 FLAG_CACHE_DIR = os.path.join(BASE_DIR, "flag_cache")
-# Original GitHub Pages path
-FLAG_INFO_PATH = os.path.join(BASE_DIR, "docs", "data", "flag.json")
-# New Flask app path
-NEW_FLAG_INFO_PATH = os.path.join(BASE_DIR, "app", "static", "data", "flag.json")
+FLAG_INFO_PATH = os.path.join(BASE_DIR, "app", "static", "data", "flag.json")
 
 
 def load_cache():
@@ -94,24 +91,18 @@ def update_flag_metadata(country):
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
     }
 
-    # Ensure original docs/data exists, then write JSON (for backward compatibility)
+    # Ensure the directory exists, then write JSON
     os.makedirs(os.path.dirname(FLAG_INFO_PATH), exist_ok=True)
     with open(FLAG_INFO_PATH, 'w') as f:
         json.dump(info, f, indent=2)
     logging.info("Wrote metadata to %s", FLAG_INFO_PATH)
 
-    # Also ensure app/static/data exists, then write JSON (for new Flask structure)
-    os.makedirs(os.path.dirname(NEW_FLAG_INFO_PATH), exist_ok=True)
-    with open(NEW_FLAG_INFO_PATH, 'w') as f:
-        json.dump(info, f, indent=2)
-    logging.info("Wrote metadata to %s", NEW_FLAG_INFO_PATH)
-
-    # Now commit & push from repo root
+    # Git operations (optional - can be removed if not needed)
     repo = BASE_DIR
-    # Add both files to git
+    # Add file to git
     subprocess.run([
         "sudo", "-u", "chris", "git", "-C", repo,
-        "add", "docs/data/flag.json", "app/static/data/flag.json"
+        "add", "app/static/data/flag.json"
     ], check=True)
     subprocess.run([
         "sudo", "-u", "chris", "git", "-C", repo,
@@ -139,10 +130,10 @@ def display_flag(epd, country_name=None):
 
     img = get_flag(country["flags"]["png"])
     
-    # First update metadata and commit to GitHub
+    # Update metadata
     update_flag_metadata(country)
     
-    # Then display the flag on the e-paper display
+    # Display the flag on the e-paper display
     resized = img.resize((epd.width, epd.height), Image.Resampling.LANCZOS)
     epd.display(epd.getbuffer(resized))
     logging.info(f"Displayed flag for {country['name']['common']}")

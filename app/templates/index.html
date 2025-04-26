@@ -20,8 +20,8 @@
 			</div>
 
 			<div id="content-container" style="display: none">
-				<!-- Flag change form - new section -->
-				<div class="flag-changer">
+				<!-- Flag change form -->
+				<div id="flag-changer" class="flag-changer">
 					<h2>Change Flag</h2>
 					<div class="form-group">
 						<label for="country-input">Enter Country Name:</label>
@@ -78,7 +78,9 @@
 			<a href="https://github.com/CHaerem">GitHub</a>
 		</footer>
 
-		<script src="{{ url_for('static', filename='js/script.js') }}"></script>
-		<script src="{{ url_for('static', filename='js/script-assets.js') }}"></script>
+		<!-- Load JavaScript modules in correct order -->
+		<script src="{{ url_for('static', filename='js/api.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/app.js') }}"></script>
 	</body>
 </html>

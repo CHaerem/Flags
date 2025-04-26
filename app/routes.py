@@ -14,18 +14,12 @@ def index():
 def serve_flag_data():
     """Serve the flag.json data file"""
     try:
-        # Check static/data directory first
+        # Check static/data directory
         static_data_path = os.path.join(current_app.static_folder, 'data', 'flag.json')
         if os.path.exists(static_data_path):
             return send_from_directory(os.path.join(current_app.static_folder, 'data'), 'flag.json')
         
-        # Fall back to the original docs location during transition
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        docs_data_path = os.path.join(base_dir, 'docs', 'data', 'flag.json')
-        if os.path.exists(docs_data_path):
-            return send_from_directory(os.path.join(base_dir, 'docs', 'data'), 'flag.json')
-        
-        # If neither exist, return an error
+        # If it doesn't exist, return an error
         return jsonify({"error": "Flag data not found"}), 404
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -56,9 +50,9 @@ def change_flag():
 
     # Get the base directory path
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    script = os.path.join(base_dir, "main.py")
+    script = os.path.join(base_dir, "scripts", "main.py")
     
-    # Run the main.py script to change the flag
+    # Run the script to change the flag
     cmd = ["sudo", "-u", "chris", "python3", script, country]
     proc = subprocess.run(cmd, capture_output=True, text=True)
     
