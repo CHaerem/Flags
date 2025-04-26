@@ -30,7 +30,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			}
 			return await response.json();
 		} catch (error) {
-			console.error("Error fetching flag data:", error);
 			showError("Could not load flag data");
 			return null;
 		}
@@ -51,7 +50,6 @@ document.addEventListener("DOMContentLoaded", () => {
 			const data = await response.json();
 			return data[0]; // Usually the first result is the exact match
 		} catch (error) {
-			console.error("Error fetching country data:", error);
 			// We'll still show the basic data even if extended data fails
 			return null;
 		}
@@ -167,7 +165,6 @@ document.addEventListener("DOMContentLoaded", () => {
 				}
 			}, 1500);
 		} catch (error) {
-			console.error("Error changing flag:", error);
 			showStatusMessage(`Failed to change flag: ${error.message}`, true);
 		} finally {
 			changeFlagBtn.disabled = false;

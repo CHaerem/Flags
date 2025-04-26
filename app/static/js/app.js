@@ -24,7 +24,6 @@ const FlagApp = (function () {
 			// Wire up event handlers
 			setupEventListeners();
 		} catch (error) {
-			console.error("Failed to initialize flag application:", error);
 			FlagUI.showStatusMessage("Failed to load flag data", true);
 		}
 	}
@@ -79,7 +78,6 @@ const FlagApp = (function () {
 				FlagUI.updateUI(localData, extendedData);
 			}, 1000);
 		} catch (error) {
-			console.error("Error:", error);
 			FlagUI.showStatusMessage(`Error: ${error.message}`, true);
 		} finally {
 			if (changeFlagBtn) {

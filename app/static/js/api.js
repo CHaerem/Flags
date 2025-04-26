@@ -21,7 +21,6 @@ const FlagAPI = (function () {
 			}
 			return await response.json();
 		} catch (error) {
-			console.error("Error fetching flag data:", error);
 			throw error;
 		}
 	}
@@ -48,7 +47,6 @@ const FlagAPI = (function () {
 			countryDataCache = await response.json();
 			return countryDataCache;
 		} catch (error) {
-			console.error("Error loading country data:", error);
 			return {};
 		}
 	}
@@ -85,10 +83,8 @@ const FlagAPI = (function () {
 				}
 			}
 
-			console.warn(`Country not found: ${countryName}`);
 			return null;
 		} catch (error) {
-			console.error("Error fetching country data:", error);
 			return null;
 		}
 	}
@@ -119,7 +115,6 @@ const FlagAPI = (function () {
 
 			return responseText;
 		} catch (error) {
-			console.error("Error changing flag:", error);
 			throw error;
 		}
 	}

@@ -13,7 +13,6 @@ const CountryAutocomplete = (function () {
 	 */
 	async function init() {
 		try {
-			console.log("Initializing country autocomplete...");
 			// Load all country data once
 			const countries = await loadCountryData();
 
@@ -23,7 +22,6 @@ const CountryAutocomplete = (function () {
 					name: name,
 					emoji: countries[name].flag || "",
 				}));
-				console.log(`Loaded ${countryList.length} countries for autocomplete`);
 
 				// Set up event listeners
 				setupAutocomplete();
@@ -39,7 +37,6 @@ const CountryAutocomplete = (function () {
 	 */
 	async function loadCountryData() {
 		try {
-			console.log("Loading country data for autocomplete...");
 			// Use cache-busting timestamp
 			const timestamp = new Date().getTime();
 			const response = await fetch(
@@ -51,7 +48,6 @@ const CountryAutocomplete = (function () {
 			}
 
 			const data = await response.json();
-			console.log("Country data loaded successfully");
 			return data;
 		} catch (error) {
 			console.error("Error loading country data for autocomplete:", error);
@@ -71,8 +67,6 @@ const CountryAutocomplete = (function () {
 			return;
 		}
 
-		console.log("Setting up autocomplete event listeners");
-
 		// Add input event listener for showing suggestions
 		input.addEventListener("input", function () {
 			const value = this.value.trim();
@@ -85,7 +79,6 @@ const CountryAutocomplete = (function () {
 
 			// Filter countries that match the input
 			const matches = filterCountries(value);
-			console.log(`Found ${matches.length} matches for "${value}"`);
 
 			// Show matching countries as suggestions
 			displaySuggestions(matches, value, suggestionsContainer);
@@ -321,6 +314,5 @@ const CountryAutocomplete = (function () {
 
 // Initialize autocomplete when DOM is loaded
 document.addEventListener("DOMContentLoaded", function () {
-	console.log("DOM loaded, initializing country autocomplete");
 	CountryAutocomplete.init();
 });
