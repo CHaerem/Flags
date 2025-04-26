@@ -4,6 +4,9 @@
  */
 
 const FlagAPI = (function () {
+	// Cache for country data after it's loaded
+	let countryDataCache = null;
+	
 	/**
 	 * Fetch flag data from local JSON file
 	 * @returns {Promise<Object>} Flag data object
@@ -22,28 +25,66 @@ const FlagAPI = (function () {
 			throw error;
 		}
 	}
+	
+	/**
+	 * Loads all country data once and caches it
+	 * @returns {Promise<Object>} Dictionary of all countries
+	 */
+	async function loadAllCountryData() {
+		if (countryDataCache) {
+			return countryDataCache;
+		}
+		
+		try {
+			// Add cache-busting timestamp to prevent browser caching during development
+			const timestamp = new Date().getTime();
+			const response = await fetch(`/static/data/countries.json?_=${timestamp}`);
+			if (!response.ok) {
+				throw new Error(`HTTP error! Status: ${response.status}`);
+			}
+			
+			countryDataCache = await response.json();
+			return countryDataCache;
+		} catch (error) {
+			console.error("Error loading country data:", error);
+			return {};
+		}
+	}
 
 	/**
-	 * Fetch extended country data from RestCountries API
+	 * Fetch country data from static JSON file
 	 * @param {string} countryName - Name of the country
 	 * @returns {Promise<Object>} Extended country data
 	 */
 	async function fetchCountryData(countryName) {
 		try {
-			const response = await fetch(
-				`https://restcountries.com/v3.1/name/${encodeURIComponent(
-					countryName
-				)}?fields=name,capital,population,region,subregion,languages,currencies,timezones`
-			);
-			if (!response.ok) {
-				throw new Error(`HTTP error! Status: ${response.status}`);
+			const countries = await loadAllCountryData();
+			
+			// First try direct match
+			if (countries[countryName]) {
+				return countries[countryName];
 			}
-
-			const data = await response.json();
-			return data[0]; // Usually the first result is the exact match
+			
+			// If not found, try case insensitive match
+			const countryNameLower = countryName.toLowerCase();
+			for (const [name, data] of Object.entries(countries)) {
+				if (name.toLowerCase() === countryNameLower) {
+					return data;
+				}
+			}
+			
+			// If still not found, try partial match
+			for (const [name, data] of Object.entries(countries)) {
+				if (name.toLowerCase().includes(countryNameLower) || 
+					countryNameLower.includes(name.toLowerCase())) {
+					return data;
+				}
+			}
+			
+			console.warn(`Country not found: ${countryName}`);
+			return null;
 		} catch (error) {
 			console.error("Error fetching country data:", error);
-			// We'll still show the basic data even if extended data fails
 			return null;
 		}
 	}
