@@ -17,7 +17,9 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Fetch flag data from local JSON
 	async function fetchLocalFlagData() {
 		try {
-			const response = await fetch("data/flag.json");
+			// Add cache-busting timestamp to prevent browser caching
+			const timestamp = new Date().getTime();
+			const response = await fetch(`data/flag.json?_=${timestamp}`);
 			if (!response.ok) {
 				throw new Error(`HTTP error! Status: ${response.status}`);
 			}
