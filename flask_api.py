@@ -23,22 +23,5 @@ def change_flag():
     return f"Flag changed to {country}", 200
 
 if __name__ == "__main__":
-    # Paths to your self-signed cert & key
-    base = os.path.dirname(__file__)
-    cert = os.path.join(base, "cert.pem")
-    key  = os.path.join(base, "key.pem")
-
-    if not (os.path.isfile(cert) and os.path.isfile(key)):
-        print("⚠️  SSL cert or key missing!")
-        print("Generate them by running on your Pi:")
-        print("  openssl req -x509 -newkey rsa:4096 -nodes \\")
-        print("    -out cert.pem -keyout key.pem -days 365")
-        print("Then restart this script.")
-        exit(1)
-
-    # Serve HTTPS
-    app.run(
-        host="0.0.0.0",
-        port=5000,
-        ssl_context=(cert, key)
-    )
+    # Start Flask API on HTTP for use with localtunnel
+    app.run(host="0.0.0.0", port=5000)
