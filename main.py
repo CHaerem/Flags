@@ -128,10 +128,13 @@ def display_flag(epd, country_name=None):
         country = random.choice(data)
 
     img = get_flag(country["flags"]["png"])
-    resized = img.resize((epd.width, epd.height), Image.Resampling.LANCZOS)
-
-    epd.display(epd.getbuffer(resized))
+    
+    # First update metadata and commit to GitHub
     update_flag_metadata(country)
+    
+    # Then display the flag on the e-paper display
+    resized = img.resize((epd.width, epd.height), Image.Resampling.LANCZOS)
+    epd.display(epd.getbuffer(resized))
     logging.info(f"Displayed flag for {country['name']['common']}")
 
 if __name__ == "__main__":
