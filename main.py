@@ -23,7 +23,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Paths (all inside your repo)
 CACHE_FILE     = os.path.join(BASE_DIR, "country_cache.json")
 FLAG_CACHE_DIR = os.path.join(BASE_DIR, "flag_cache")
-FLAG_INFO_PATH = os.path.join(BASE_DIR, "github-pages", "data", "flag.json")
+FLAG_INFO_PATH = os.path.join(BASE_DIR, "docs", "data", "flag.json")
+
 
 def load_cache():
     if os.path.exists(CACHE_FILE):
@@ -40,6 +41,7 @@ def get_country_data():
     if cache:
         logging.info("Loaded country data from cache")
         return cache
+
     url = "https://restcountries.com/v3.1/all?fields=name,flags,capital,flag"
     resp = requests.get(url)
     resp.raise_for_status()
@@ -65,6 +67,7 @@ def get_flag(url):
     if cached:
         logging.info("Loaded flag image from cache")
         return cached
+
     headers = {'User-Agent': 'Mozilla/5.0', 'Accept': 'image/png'}
     resp = requests.get(url, headers=headers)
     resp.raise_for_status()
@@ -80,35 +83,53 @@ def get_country_by_name(data, name):
     return None
 
 def update_flag_metadata(country):
+    # Build the metadata
     info = {
         "country": country['name']['common'],
         "info": f"Capital: {country.get('capital', ['Unknown'])[0]}",
         "emoji": country.get('flag', ''),
         "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
     }
+
+    # Ensure docs/data exists, then write JSON
     os.makedirs(os.path.dirname(FLAG_INFO_PATH), exist_ok=True)
     with open(FLAG_INFO_PATH, 'w') as f:
         json.dump(info, f, indent=2)
     logging.info("Wrote metadata to %s", FLAG_INFO_PATH)
-    repo = os.path.join(BASE_DIR, "github-pages")
-    subprocess.run(["sudo", "-u", "chris", "git", "-C", repo, "add", "data/flag.json"], check=True)
+
+    # Now commit & push from repo root
+    repo = BASE_DIR
+    subprocess.run([
+        "sudo", "-u", "chris", "git", "-C", repo,
+        "add", "docs/data/flag.json"
+    ], check=True)
     subprocess.run([
         "sudo", "-u", "chris", "git", "-C", repo,
         "commit", "-m", f"Update flag: {info['country']}"
     ], check=True)
-    subprocess.run(["sudo", "-u", "chris", "git", "-C", repo, "push"], check=True)
+    subprocess.run([
+        "sudo", "-u", "chris", "git", "-C", repo,
+        "pull", "--rebase", "origin", "main"
+    ], check=True)
+    subprocess.run([
+        "sudo", "-u", "chris", "git", "-C", repo,
+        "push", "origin", "main"
+    ], check=True)
     logging.info("Pushed flag metadata to GitHub Pages")
 
 def display_flag(epd, country_name=None):
     logging.info("Displaying flag...")
+
     data = get_country_data()
     country = get_country_by_name(data, country_name) if country_name else None
     if country_name and not country:
         raise ValueError(f"Country '{country_name}' not recognized")
     if not country:
         country = random.choice(data)
+
     img = get_flag(country["flags"]["png"])
     resized = img.resize((epd.width, epd.height), Image.Resampling.LANCZOS)
+
     epd.display(epd.getbuffer(resized))
     update_flag_metadata(country)
     logging.info(f"Displayed flag for {country['name']['common']}")
@@ -116,13 +137,17 @@ def display_flag(epd, country_name=None):
 if __name__ == "__main__":
     try:
         country_arg = sys.argv[1] if len(sys.argv) > 1 else None
+
         epd = epd7in3f.EPD()
         logging.info("Initializing display")
         epd.init()
         epd.Clear()
+
         display_flag(epd, country_arg)
+
         logging.info("Sleeping display")
         epd.sleep()
+
     except Exception as e:
         logging.error("Error: %s", e)
         traceback.print_exc()
