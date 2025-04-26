@@ -26,11 +26,10 @@ def serve_flag_data():
 
 @main.route("/health", methods=["GET"])
 def health_check():
-    """Health check endpoint that helps users to accept the certificate"""
+    """Health check endpoint"""
     return jsonify({
         "status": "ok",
-        "message": "API is running. Static site is served directly from this Flask application.",
-        "info": "This page helps your browser accept the self-signed certificate."
+        "message": "API is running. Static site is served directly from this Flask application."
     })
 
 @main.route("/change-flag", methods=["OPTIONS", "POST"])
