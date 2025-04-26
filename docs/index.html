@@ -13,8 +13,24 @@
 				--primary-color: #3498db;
 				--secondary-color: #f8f9fa;
 				--text-color: #333;
+				--background-color: #f5f7fa;
+				--card-color: #ffffff;
 				--border-color: #e0e0e0;
 				--shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+				--muted-text: #888;
+			}
+
+			@media (prefers-color-scheme: dark) {
+				:root {
+					--primary-color: #61a5e4;
+					--secondary-color: #2c3e50;
+					--text-color: #f5f5f5;
+					--background-color: #1a1a2e;
+					--card-color: #2c2c44;
+					--border-color: #3f3f5f;
+					--shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+					--muted-text: #aaa;
+				}
 			}
 
 			* {
@@ -27,7 +43,7 @@
 				font-family: "Nunito", sans-serif;
 				line-height: 1.6;
 				color: var(--text-color);
-				background-color: #f5f7fa;
+				background-color: var(--background-color);
 				padding: 0;
 				margin: 0;
 			}
@@ -35,47 +51,16 @@
 			.container {
 				width: 100%;
 				max-width: 600px;
-				margin: 0 auto;
+				margin: 2rem auto;
 				padding: 1rem;
 			}
 
-			header {
-				text-align: center;
-				padding: 1.5rem 0;
-				background-color: var(--primary-color);
-				color: white;
-				margin-bottom: 2rem;
-				box-shadow: var(--shadow);
-			}
-
 			.card {
-				background: white;
+				background: var(--card-color);
 				border-radius: 8px;
 				overflow: hidden;
 				box-shadow: var(--shadow);
 				margin-bottom: 1.5rem;
-			}
-
-			.flag-container {
-				position: relative;
-				width: 100%;
-				padding-top: 66.67%; /* 3:2 aspect ratio for most flags */
-				overflow: hidden;
-				background-color: #f1f1f1;
-			}
-
-			#flag-img {
-				position: absolute;
-				top: 0;
-				left: 0;
-				width: 100%;
-				height: 100%;
-				object-fit: cover;
-				transition: transform 0.3s ease;
-			}
-
-			#flag-img:hover {
-				transform: scale(1.03);
 			}
 
 			.flag-info {
@@ -83,15 +68,17 @@
 			}
 
 			#emoji {
-				font-size: 3.5rem;
-				margin: 1rem 0;
+				font-size: 4rem;
+				margin: 0.5rem 0 1rem;
 				display: block;
+				text-align: center;
 			}
 
 			h1 {
-				font-size: 1.8rem;
+				font-size: 2rem;
 				margin-bottom: 1rem;
 				color: var(--primary-color);
+				text-align: center;
 			}
 
 			.country-info {
@@ -108,7 +95,7 @@
 			.info-label {
 				flex: 0 0 40%;
 				font-weight: 600;
-				color: #666;
+				color: var(--primary-color);
 			}
 
 			.info-value {
@@ -118,7 +105,7 @@
 			#timestamp {
 				text-align: right;
 				font-size: 0.85rem;
-				color: #888;
+				color: var(--muted-text);
 				margin-top: 1.5rem;
 			}
 
@@ -134,7 +121,7 @@
 				width: 40px;
 				height: 40px;
 				border-radius: 50%;
-				border: 3px solid #f3f3f3;
+				border: 3px solid var(--border-color);
 				border-top: 3px solid var(--primary-color);
 				animation: spin 1s linear infinite;
 			}
@@ -153,7 +140,7 @@
 				padding: 1.5rem;
 				margin-top: 2rem;
 				font-size: 0.85rem;
-				color: #888;
+				color: var(--muted-text);
 			}
 
 			@media (max-width: 480px) {
@@ -161,7 +148,7 @@
 					font-size: 1.5rem;
 				}
 				#emoji {
-					font-size: 3rem;
+					font-size: 3.5rem;
 				}
 				.flag-info {
 					padding: 1rem;
@@ -170,11 +157,6 @@
 		</style>
 	</head>
 	<body>
-		<header>
-			<h1>Flag Display</h1>
-			<p>Current flag on your E-Ink display</p>
-		</header>
-
 		<div class="container">
 			<div id="loading-container" class="loading">
 				<div class="spinner"></div>
@@ -182,9 +164,6 @@
 
 			<div id="content-container" style="display: none">
 				<div class="card">
-					<div class="flag-container">
-						<img id="flag-img" src="" alt="Country Flag" />
-					</div>
 					<div class="flag-info">
 						<div id="emoji"></div>
 						<h1 id="country">Loading...</h1>
