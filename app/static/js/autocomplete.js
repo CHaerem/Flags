@@ -13,17 +13,21 @@ const CountryAutocomplete = (function () {
 	 */
 	async function init() {
 		try {
+			console.log("Initializing country autocomplete...");
 			// Load all country data once
 			const countries = await loadCountryData();
 
-			// Extract country names and store them for autocomplete
-			countryList = Object.keys(countries).map((name) => ({
-				name: name,
-				emoji: countries[name].flag || "",
-			}));
+			if (countries) {
+				// Extract country names and store them for autocomplete
+				countryList = Object.keys(countries).map((name) => ({
+					name: name,
+					emoji: countries[name].flag || "",
+				}));
+				console.log(`Loaded ${countryList.length} countries for autocomplete`);
 
-			// Set up event listeners
-			setupAutocomplete();
+				// Set up event listeners
+				setupAutocomplete();
+			}
 		} catch (error) {
 			console.error("Failed to initialize autocomplete:", error);
 		}
@@ -35,18 +39,23 @@ const CountryAutocomplete = (function () {
 	 */
 	async function loadCountryData() {
 		try {
+			console.log("Loading country data for autocomplete...");
 			// Use cache-busting timestamp
 			const timestamp = new Date().getTime();
 			const response = await fetch(
 				`/static/data/countries.json?_=${timestamp}`
 			);
+
 			if (!response.ok) {
 				throw new Error(`HTTP error! Status: ${response.status}`);
 			}
-			return await response.json();
+
+			const data = await response.json();
+			console.log("Country data loaded successfully");
+			return data;
 		} catch (error) {
 			console.error("Error loading country data for autocomplete:", error);
-			throw error;
+			return null;
 		}
 	}
 
@@ -57,7 +66,12 @@ const CountryAutocomplete = (function () {
 		const input = document.getElementById("country-input");
 		const suggestionsContainer = document.getElementById("country-suggestions");
 
-		if (!input || !suggestionsContainer) return;
+		if (!input || !suggestionsContainer) {
+			console.error("Required DOM elements not found for autocomplete");
+			return;
+		}
+
+		console.log("Setting up autocomplete event listeners");
 
 		// Add input event listener for showing suggestions
 		input.addEventListener("input", function () {
@@ -71,6 +85,7 @@ const CountryAutocomplete = (function () {
 
 			// Filter countries that match the input
 			const matches = filterCountries(value);
+			console.log(`Found ${matches.length} matches for "${value}"`);
 
 			// Show matching countries as suggestions
 			displaySuggestions(matches, value, suggestionsContainer);
@@ -95,6 +110,11 @@ const CountryAutocomplete = (function () {
 	 * @returns {Array} Array of matching country objects
 	 */
 	function filterCountries(input) {
+		if (!countryList.length) {
+			console.warn("No country data available for filtering");
+			return [];
+		}
+
 		const inputLower = input.toLowerCase();
 
 		// Filter countries that start with the input text first
@@ -301,5 +321,6 @@ const CountryAutocomplete = (function () {
 
 // Initialize autocomplete when DOM is loaded
 document.addEventListener("DOMContentLoaded", function () {
+	console.log("DOM loaded, initializing country autocomplete");
 	CountryAutocomplete.init();
 });

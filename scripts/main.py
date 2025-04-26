@@ -108,40 +108,64 @@ def get_flag(country_data):
 def get_country_by_name(data, name):
     if not name:
         return None
-        
-    # Normalize the input name - lowercase and strip spaces
+    
+    # Normalize input    
     name_lower = name.lower().strip()
     
-    # For exact match (case insensitive)
+    # Try direct match with key (case insensitive)
     for country_name, country_data in data.items():
         if country_name.lower() == name_lower:
+            logging.info(f"Found direct match for '{name}': {country_name}")
             return country_data
-            
-    # For partial match - check if the input is contained in any country name
+    
+    # Try exact match with flag emoji (many users might paste emoji)
+    for country_name, country_data in data.items():
+        if country_data.get('flag', '').lower() == name_lower:
+            logging.info(f"Found emoji match for '{name}': {country_name}")
+            return country_data
+    
+    # Try match with common alternative names
+    alt_names = {
+        'usa': 'United States',
+        'us': 'United States',
+        'america': 'United States',
+        'uk': 'United Kingdom',
+        'england': 'United Kingdom',
+        'britain': 'United Kingdom',
+        'uae': 'United Arab Emirates',
+        'roc': 'Taiwan',
+        'drc': 'DR Congo',
+        'north macedonia': 'Macedonia',
+        'macedonia': 'North Macedonia',
+    }
+    
+    if name_lower in alt_names:
+        alt_name = alt_names[name_lower]
+        if alt_name in data:
+            logging.info(f"Found alternative name match: '{name}' -> '{alt_name}'")
+            return data[alt_name]
+    
+    # Try partial match - if the input is contained in any country name
     for country_name, country_data in data.items():
         if name_lower in country_name.lower():
+            logging.info(f"Found partial match for '{name}': {country_name}")
             return country_data
     
-    # For partial match - check if any country name is contained in the input
+    # Try partial match - if any country name is contained in the input
     for country_name, country_data in data.items():
         if country_name.lower() in name_lower:
+            logging.info(f"Found reverse partial match for '{name}': {country_name}")
             return country_data
     
-    # Check alternative names if available
+    # Try country codes (cca2, cca3)
     for country_name, country_data in data.items():
-        if 'name' in country_data and 'nativeName' in country_data['name']:
-            for lang, name_data in country_data['name']['nativeName'].items():
-                if 'common' in name_data and name_lower in name_data['common'].lower():
-                    return country_data
-                    
-    # As a last resort, check the code
-    for country_name, country_data in data.items():
-        if 'cca2' in country_data and country_data['cca2'].lower() == name_lower:
-            return country_data
-        if 'cca3' in country_data and country_data['cca3'].lower() == name_lower:
+        cca2 = country_data.get('cca2', '').lower()
+        cca3 = country_data.get('cca3', '').lower()
+        if cca2 == name_lower or cca3 == name_lower:
+            logging.info(f"Found country code match for '{name}': {country_name}")
             return country_data
     
-    # If no match found
+    logging.warning(f"No matching country found for '{name}'")
     return None
 
 def update_flag_metadata(country):
