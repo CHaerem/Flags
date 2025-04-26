@@ -1,6 +1,56 @@
 # 🏳️‍🌈 E-Ink Flag Display with NFC, GitHub Pages, and Google Home
 
-This project runs on a Raspberry Pi with a Waveshare 7.3" e-ink display. It shows a national flag, updates a GitHub Pages-hosted info page, and supports interaction via NFC and Google Home voice commands.
+## 🚀 Getting Started
+
+1. **Clone the repo**
+   ```bash
+   git clone https://github.com/CHaerem/Flags.git
+   cd Flags
+   ```
+2. **Install dependencies**
+
+   ```bash
+   # System packages
+   sudo apt update
+   sudo apt install python3-pip python3-venv python3-flask
+
+   # (Optional) or use venv:
+   python3 -m venv venv
+   source venv/bin/activate
+   pip install Flask requests Pillow waveshare-epd
+   ```
+
+3. **Rename pages folder** (if not already):
+   ```bash
+   git mv github-pages docs
+   git commit -m "Rename to docs for GitHub Pages"
+   git push
+   ```
+4. **Configure GitHub Pages**
+   - In GitHub repo **Settings → Pages**, set **Source** to **main branch** and **/docs** folder.
+5. **Set up Flask API**
+   ```bash
+   chmod +x flask_api.py
+   # run manually
+   ./flask_api.py
+   ```
+6. **Run the display script**
+   ```bash
+   sudo python3 main.py [CountryName]
+   ```
+7. **Auto-start on boot** (pick one):
+   - **Cron**:
+     ```bash
+     crontab -e
+     @reboot sleep 15 && /usr/bin/python3 /home/chris/Flags/flask_api.py >> flask_api.log 2>&1
+     ```
+   - **systemd**:  
+     Create `/etc/systemd/system/flask_api.service` as described, then:
+     ```bash
+     sudo systemctl daemon-reload
+     sudo systemctl enable flask_api
+     sudo systemctl start flask_api
+     ```
 
 ---
 
@@ -20,7 +70,7 @@ project-root/
 ├── main.py                     # Displays flag & updates GitHub metadata
 ├── flask_api.py                # /change-flag endpoint for local control
 ├── flags/                      # .bmp images for each country
-├── github-pages/
+├── docs/
 │   ├── index.html              # Public info page
 │   ├── data/flag.json          # Current flag metadata
 │   └── script.js               # Renders JSON into HTML
@@ -37,7 +87,7 @@ project-root/
 - **main.py**:
   1. Fetches country data & flag image (with caching)
   2. Resizes and displays on e-ink
-  3. Writes metadata to `github-pages/data/flag.json`
+  3. Writes metadata to `docs/data/flag.json`
   4. (Optional) `git add && git commit && git push`
 
 ```json
