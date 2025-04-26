@@ -126,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
 		statusMessage.textContent = message;
 		statusMessage.classList.remove("hidden", "success", "error");
 		statusMessage.classList.add(isError ? "error" : "success");
-		
+
 		// Auto-hide after 5 seconds
 		setTimeout(() => {
 			statusMessage.classList.add("hidden");
@@ -136,27 +136,29 @@ document.addEventListener("DOMContentLoaded", () => {
 	// Function to change the flag via Flask API
 	async function changeFlag(countryName) {
 		try {
-			// First check if we can connect to the local API
-			const flaskApiUrl = `http://localhost:5000/change-flag?country=${encodeURIComponent(countryName)}`;
-			
+			// Use smartpi.local instead of localhost
+			const flaskApiUrl = `http://smartpi.local:5000/change-flag?country=${encodeURIComponent(
+				countryName
+			)}`;
+
 			changeFlagBtn.disabled = true;
 			changeFlagBtn.textContent = "Updating...";
-			
+
 			const response = await fetch(flaskApiUrl, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 				},
 			});
-			
+
 			const responseText = await response.text();
-			
+
 			if (!response.ok) {
 				throw new Error(`Error: ${responseText}`);
 			}
-			
+
 			showStatusMessage(`Success! ${responseText}`);
-			
+
 			// Reload the flag data after a short delay to allow the backend to update
 			setTimeout(async () => {
 				const localData = await fetchLocalFlagData();
@@ -167,7 +169,10 @@ document.addEventListener("DOMContentLoaded", () => {
 			}, 1500);
 		} catch (error) {
 			console.error("Error changing flag:", error);
-			showStatusMessage(`Failed to change flag: ${error.message}. Are you connected to the same WiFi network as the Flask server?`, true);
+			showStatusMessage(
+				`Failed to change flag: ${error.message}. Are you connected to the same WiFi network as the Raspberry Pi?`,
+				true
+			);
 		} finally {
 			changeFlagBtn.disabled = false;
 			changeFlagBtn.textContent = "Update Flag";
@@ -181,7 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
 			const extendedData = await fetchCountryData(localData.country);
 			updateUI(localData, extendedData);
 		}
-		
+
 		// Set up event listeners for the flag changer
 		changeFlagBtn.addEventListener("click", () => {
 			const country = countryInput.value.trim();
@@ -191,7 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
 				showStatusMessage("Please enter a country name", true);
 			}
 		});
-		
+
 		// Allow pressing enter in the input field
 		countryInput.addEventListener("keypress", (event) => {
 			if (event.key === "Enter") {
