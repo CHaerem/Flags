@@ -58,16 +58,20 @@
 					</div>
 				</div>
 
-				<!-- Flag change form -->
+				<!-- Flag change form with autocomplete -->
 				<div id="flag-changer" class="flag-changer">
 					<h2>Change Flag</h2>
 					<div class="form-group">
 						<label for="country-input">Enter Country Name:</label>
-						<input
-							type="text"
-							id="country-input"
-							placeholder="e.g., Norway, Japan, Brazil"
-						/>
+						<div class="autocomplete-container">
+							<input
+								type="text"
+								id="country-input"
+								placeholder="e.g., Norway, Japan, Brazil"
+								autocomplete="off"
+							/>
+							<div id="country-suggestions" class="autocomplete-items"></div>
+						</div>
 					</div>
 					<button id="change-flag-btn" class="btn">Update Flag</button>
 					<div id="status-message" class="status-message hidden"></div>
@@ -78,6 +82,7 @@
 		<!-- JavaScript -->
 		<script src="{{ url_for('static', filename='js/api.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/autocomplete.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/app.js') }}"></script>
 	</body>
 </html>

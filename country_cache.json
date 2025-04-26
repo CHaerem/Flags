@@ -52,5 +52,32 @@
     "timezones": ["UTC+13:00"],
     "cca2": "TO",
     "cca3": "TON"
+  },
+  "Japan": {
+    "name": {
+      "common": "Japan"
+    },
+    "flag": "🇯🇵",
+    "flags": {
+      "alt": "The flag of Japan has a white field with a large crimson-red circle at its center."
+    },
+    "capital": [
+      "Tokyo"
+    ],
+    "region": "Asia",
+    "subregion": "Eastern Asia",
+    "population": 125836021,
+    "languages": {
+      "jpn": "Japanese"
+    },
+    "currencies": {
+      "JPY": {
+        "name": "Japanese yen",
+        "symbol": "¥"
+      }
+    },
+    "timezones": ["UTC+09:00"],
+    "cca2": "JP",
+    "cca3": "JPN"
   }
 }

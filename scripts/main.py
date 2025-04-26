@@ -106,21 +106,42 @@ def get_flag(country_data):
     raise ValueError(f"Could not find or fetch flag image for {country_name}")
 
 def get_country_by_name(data, name):
-    # For exact match
-    if name in data:
-        return data[name]
+    if not name:
+        return None
+        
+    # Normalize the input name - lowercase and strip spaces
+    name_lower = name.lower().strip()
     
-    # For case-insensitive match
-    name_lower = name.lower()
+    # For exact match (case insensitive)
     for country_name, country_data in data.items():
         if country_name.lower() == name_lower:
             return country_data
             
-    # For partial match
+    # For partial match - check if the input is contained in any country name
     for country_name, country_data in data.items():
-        if name_lower in country_name.lower() or country_name.lower() in name_lower:
+        if name_lower in country_name.lower():
             return country_data
-            
+    
+    # For partial match - check if any country name is contained in the input
+    for country_name, country_data in data.items():
+        if country_name.lower() in name_lower:
+            return country_data
+    
+    # Check alternative names if available
+    for country_name, country_data in data.items():
+        if 'name' in country_data and 'nativeName' in country_data['name']:
+            for lang, name_data in country_data['name']['nativeName'].items():
+                if 'common' in name_data and name_lower in name_data['common'].lower():
+                    return country_data
+                    
+    # As a last resort, check the code
+    for country_name, country_data in data.items():
+        if 'cca2' in country_data and country_data['cca2'].lower() == name_lower:
+            return country_data
+        if 'cca3' in country_data and country_data['cca3'].lower() == name_lower:
+            return country_data
+    
+    # If no match found
     return None
 
 def update_flag_metadata(country):
