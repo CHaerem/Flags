@@ -21,6 +21,7 @@ def change_flag():
         resp = make_response(("", 204))
         resp.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
         resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        resp.headers["Access-Control-Allow-Origin"] = "https://chaerem.github.io"
         return resp
 
     country = request.args.get("country")
@@ -32,7 +33,9 @@ def change_flag():
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0:
         return f"Error: {proc.stderr.strip()}", 500
-    return f"Flag changed to {country}", 200
+    resp = make_response(f"Flag changed to {country}", 200)
+    resp.headers["Access-Control-Allow-Origin"] = "https://chaerem.github.io"
+    return resp
 
 if __name__ == "__main__":
     # HTTP on 5000 for localtunnel
