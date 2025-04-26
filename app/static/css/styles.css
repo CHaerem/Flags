@@ -133,10 +133,10 @@ body {
 .flag-changer {
     background: var(--card-color);
     border-radius: 8px;
-    overflow: hidden;
     box-shadow: var(--shadow);
     margin-bottom: 1.5rem;
     padding: 1.5rem;
+    position: relative; /* Added position relative for proper absolute positioning of children */
 }
 
 .flag-changer h2 {
@@ -219,7 +219,7 @@ body {
     position: absolute;
     border: 1px solid var(--border-color);
     border-top: none;
-    z-index: 99;
+    z-index: 1000; /* Increased z-index to ensure it's above all other content */
     top: 100%;
     left: 0;
     right: 0;
