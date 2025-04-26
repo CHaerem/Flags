@@ -3,7 +3,7 @@
 
 import os
 import subprocess
-from flask import Flask, request, make_response
+from flask import Flask, request, make_response, jsonify
 from flask_cors import CORS
 
 # Import the certificate generation function
@@ -16,6 +16,15 @@ CORS(app,
      methods=["POST", "OPTIONS"],
      allow_headers=["Content-Type"],
      supports_credentials=False)
+
+@app.route("/", methods=["GET"])
+def health_check():
+    """Health check endpoint that helps users to accept the certificate"""
+    return jsonify({
+        "status": "ok",
+        "message": "API is running. If you're seeing this page, you can now return to the GitHub Pages site and use it.",
+        "info": "This page helps your browser accept the self-signed certificate."
+    })
 
 @app.route("/change-flag", methods=["OPTIONS", "POST"])
 def change_flag():
