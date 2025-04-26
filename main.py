@@ -109,6 +109,9 @@ def update_flag_metadata(country):
         json.dump(info, f, indent=2)
     logging.info("Wrote metadata to %s", FLAG_INFO_PATH)
     repo = os.path.join(BASE_DIR, "github-pages")
+    # ensure Git author identity for commits
+    subprocess.run(["git", "-C", repo, "config", "user.name", "Christopher Hærem"], check=True)
+    subprocess.run(["git", "-C", repo, "config", "user.email", "chris.haerem@gmail.com"], check=True)
     subprocess.run(["git", "-C", repo, "add", "data/flag.json"], check=True)
     subprocess.run(["git", "-C", repo, "commit", "-m", f"Update flag: {info['country']}"], check=True)
     subprocess.run(["git", "-C", repo, "push"], check=True)
