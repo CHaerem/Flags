@@ -3,14 +3,26 @@
 
 import os
 import subprocess
-from flask import Flask, request
+from flask import Flask, request, make_response
 from flask_cors import CORS
 
 app = Flask(__name__)
-CORS(app)  # allow requests from your docs site
+# Allow GitHub Pages origins to make XHR/Fetch calls
+CORS(app,
+     resources={r"/change-flag": {"origins": ["https://chaerem.github.io", "https://*.github.io"]}},
+     methods=["POST", "OPTIONS"],
+     allow_headers=["Content-Type"],
+     supports_credentials=False)
 
-@app.route("/change-flag", methods=["POST"])
+@app.route("/change-flag", methods=["OPTIONS", "POST"])
 def change_flag():
+    # Respond to preflight immediately
+    if request.method == "OPTIONS":
+        resp = make_response(("", 204))
+        resp.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        resp.headers["Access-Control-Allow-Headers"] = "Content-Type"
+        return resp
+
     country = request.args.get("country")
     if not country:
         return "Missing ?country=…", 400
@@ -23,5 +35,5 @@ def change_flag():
     return f"Flag changed to {country}", 200
 
 if __name__ == "__main__":
-    # Start Flask API on HTTP for use with localtunnel
+    # HTTP on 5000 for localtunnel
     app.run(host="0.0.0.0", port=5000)
