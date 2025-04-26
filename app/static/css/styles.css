@@ -214,6 +214,36 @@ body {
     width: 100%;
 }
 
+/* Styles for country-suggestions container */
+#country-suggestions {
+    position: absolute;
+    border: 1px solid var(--border-color);
+    border-top: none;
+    z-index: 99;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: var(--card-color);
+    border-radius: 0 0 4px 4px;
+    box-shadow: var(--shadow);
+}
+
+#country-suggestions div {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+}
+
+#country-suggestions div:last-child {
+    border-bottom: none;
+}
+
+#country-suggestions div:hover {
+    background-color: var(--secondary-color);
+}
+
 .autocomplete-items {
     position: absolute;
     border: 1px solid var(--border-color);
