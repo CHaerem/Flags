@@ -34,6 +34,7 @@ certs/
 
 # Locally generated data
 docs/data/flag.json
+current_flag.json
 
 # May want to exclude large cache directories if they're generated
 # Uncomment if you want to exclude these

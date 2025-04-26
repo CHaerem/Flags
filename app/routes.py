@@ -12,18 +12,23 @@ def index():
     return render_template('index.html')
 
 @main.route('/static/data/flag.json')
-def serve_flag_data():
+def flag_json():
     """Serve the flag.json data file"""
     try:
-        # Check static/data directory
-        static_data_path = os.path.join(current_app.static_folder, 'data', 'flag.json')
-        if os.path.exists(static_data_path):
-            return send_from_directory(os.path.join(current_app.static_folder, 'data'), 'flag.json')
+        # Use current_flag.json instead of flag.json
+        current_flag_path = os.path.join(current_app.root_path, '..', 'current_flag.json')
         
-        # If it doesn't exist, return an error
-        return jsonify({"error": "Flag data not found"}), 404
+        if os.path.exists(current_flag_path):
+            # Read the content of current_flag.json and return it
+            with open(current_flag_path, 'r') as f:
+                flag_data = json.load(f)
+                return jsonify(flag_data)
+        else:
+            return jsonify({"error": "Flag data not found"}), 404
+            
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        current_app.logger.error(f"Error serving flag data: {str(e)}")
+        return jsonify({"error": "Failed to load flag data"}), 500
 
 @main.route("/health", methods=["GET"])
 def health_check():

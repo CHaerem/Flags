@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.DEBUG)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Paths for the new structure
-CACHE_FILE     = os.path.join(BASE_DIR, "country_cache.json")
+CACHE_FILE     = os.path.join(BASE_DIR, "app", "static", "data", "countries.json")
 FLAG_CACHE_DIR = os.path.join(BASE_DIR, "flag_cache")
 FLAG_INFO_PATH = os.path.join(BASE_DIR, "app", "static", "data", "flag.json")
 
@@ -42,7 +42,7 @@ def get_country_data():
         logging.info("Loaded country data from cache")
         return cache
 
-    # If cache is empty, we should fetch data from API, but since we already have a populated country_cache.json,
+    # If cache is empty, we should fetch data from API, but since we already have a populated countries.json,
     # this probably won't happen unless the file is deleted
     url = "https://restcountries.com/v3.1/all?fields=name,flags,capital,flag,population,region,subregion,languages,currencies,timezones"
     resp = requests.get(url)
@@ -191,11 +191,13 @@ def update_flag_metadata(country):
     if 'timezones' in country:
         info['timezones'] = country['timezones']
 
-    # Ensure the directory exists, then write JSON
-    os.makedirs(os.path.dirname(FLAG_INFO_PATH), exist_ok=True)
-    with open(FLAG_INFO_PATH, 'w') as f:
+    # Define the gitignored file path
+    gitignored_flag_path = os.path.join(BASE_DIR, "current_flag.json")
+
+    # Only write to the gitignored file
+    with open(gitignored_flag_path, 'w') as f:
         json.dump(info, f, indent=2)
-    logging.info("Wrote metadata to %s", FLAG_INFO_PATH)
+    logging.info("Wrote metadata to gitignored file %s", gitignored_flag_path)
 
 def display_flag(epd, country_name=None):
     logging.info("Displaying flag...")
