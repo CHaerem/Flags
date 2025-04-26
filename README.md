@@ -6,15 +6,16 @@ This project runs on a Raspberry Pi with a Waveshare 7.3" e-ink display. It show
 
 ## 🎯 Features
 
-- 📺 **E-Ink display** shows the current country’s flag  
-- 🌐 **GitHub Pages** serves a public `flag.json` with metadata  
-- 📱 **NFC tag** links directly to the GitHub-hosted page  
-- 🗣️ **Google Home** voice control for flag changes and queries  
+- 📺 **E-Ink display** shows the current country's flag
+- 🌐 **GitHub Pages** serves a public `flag.json` with metadata
+- 📱 **NFC tag** links directly to the GitHub-hosted page
+- 🗣️ **Google Home** voice control for flag changes and queries
 
 ---
 
 ## 📂 Project Structure
 
+```
 project-root/
 ├── main.py                     # Displays flag & updates GitHub metadata
 ├── flask_api.py                # /change-flag endpoint for local control
@@ -26,72 +27,64 @@ project-root/
 ├── local-home-app/
 │   └── local-home-app.js       # Google Local Home SDK logic
 └── README.md
+```
 
 ---
 
 ## 💻 E-Ink Display (Raspberry Pi)
 
-- Uses [`epd7in3f`](https://github.com/waveshare/e-Paper)  
+- Uses [`epd7in3f`](https://github.com/waveshare/e-Paper)
 - **main.py**:
-  1. Fetches country data & flag image (with caching)  
-  2. Resizes and displays on e-ink  
-  3. Writes metadata to `github-pages/data/flag.json`  
+  1. Fetches country data & flag image (with caching)
+  2. Resizes and displays on e-ink
+  3. Writes metadata to `github-pages/data/flag.json`
   4. (Optional) `git add && git commit && git push`
 
 ```json
 // example flag.json
 {
-  "country": "Argentina",
-  "info": "Capital: Buenos Aires",
-  "emoji": "🇦🇷",
-  "timestamp": "2025-04-25 14:30:00"
+	"country": "Argentina",
+	"info": "Capital: Buenos Aires",
+	"emoji": "🇦🇷",
+	"timestamp": "2025-04-25 14:30:00"
 }
+```
 
+## 📱 NFC Integration
 
+1. Install NFC Tools on your phone
+2. Write URL https://CHaerem.github.io/Flags/ to the tag
+3. Tap the tag to open the flag info page
 
-⸻
+## 🗣️ Google Home (Local)
 
-📱 NFC Integration
-	1.	Install NFC Tools on your phone
-	2.	Write URL https://CHaerem.github.io/Flags/ to the tag
-	3.	Tap the tag to open the flag info page
+- **Flask API (flask_api.py):**
 
-⸻
+  ```
+  POST http://raspberrypi.local:5000/change-flag?country=Brazil
+  ```
 
-🗣️ Google Home (Local)
-	•	Flask API (flask_api.py):
+- **Local Home SDK (local-home-app.js):**
+  - Sends POST /change-flag?country=XYZ to your Pi
+  - Fetches https://CHaerem.github.io/Flags/data/flag.json
 
-POST http://raspberrypi.local:5000/change-flag?country=Brazil
+## 🔄 Offline / Online Matrix
 
+| Component     | Offline | Source                    |
+| ------------- | ------- | ------------------------- |
+| E-ink display | ✅      | Local on Raspberry Pi     |
+| GitHub Pages  | ✅      | Public via GitHub         |
+| Google Home   | ✅      | Local Home SDK → Pi       |
+| NFC tag       | ✅      | Static HTTPS link to page |
 
-	•	Local Home SDK (local-home-app.js):
-	•	Sends POST /change-flag?country=XYZ to your Pi
-	•	Fetches https://CHaerem.github.io/Flags/data/flag.json
+## 🛠 To Do
 
-⸻
+- Add timestamp to flag.json
+- Support random flag rotation
+- Enable local preview of GitHub page
 
-🔄 Offline / Online Matrix
+## 👤 Author
 
-Component	Offline	Source
-E-ink display	✅	Local on Raspberry Pi
-GitHub Pages	✅	Public via GitHub
-Google Home	✅	Local Home SDK → Pi
-NFC tag	✅	Static HTTPS link to page
-
-
-
-⸻
-
-🛠 To Do
-	•	Add timestamp to flag.json
-	•	Support random flag rotation
-	•	Enable local preview of GitHub page
-
-⸻
-
-👤 Author
-
-Christopher Hærem
-📧 chris.haerem@gmail.com
+Christopher Hærem  
+📧 chris.haerem@gmail.com  
 🔗 https://github.com/CHaerem
-
