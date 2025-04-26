@@ -109,7 +109,7 @@ def update_flag_metadata(country):
     ], check=True)
     subprocess.run([
         "sudo", "-u", "chris", "git", "-C", repo,
-        "pull", "--rebase", "origin", "main"
+        "pull", "--rebase", "--autostash", "origin", "main"
     ], check=True)
     subprocess.run([
         "sudo", "-u", "chris", "git", "-C", repo,
