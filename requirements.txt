@@ -1,3 +1,5 @@
 requests
 Pillow
 waveshare-epd
+Flask
+flask-cors
