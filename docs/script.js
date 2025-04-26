@@ -14,6 +14,11 @@ document.addEventListener("DOMContentLoaded", () => {
 	const currencyElement = document.getElementById("currency");
 	const timezonesElement = document.getElementById("timezones");
 
+	// Flag changer elements
+	const countryInput = document.getElementById("country-input");
+	const changeFlagBtn = document.getElementById("change-flag-btn");
+	const statusMessage = document.getElementById("status-message");
+
 	// Fetch flag data from local JSON
 	async function fetchLocalFlagData() {
 		try {
@@ -116,6 +121,59 @@ document.addEventListener("DOMContentLoaded", () => {
 		loadingContainer.innerHTML = `<div style="color: red; text-align: center;">${message}</div>`;
 	}
 
+	// Show status messages for flag changes
+	function showStatusMessage(message, isError = false) {
+		statusMessage.textContent = message;
+		statusMessage.classList.remove("hidden", "success", "error");
+		statusMessage.classList.add(isError ? "error" : "success");
+		
+		// Auto-hide after 5 seconds
+		setTimeout(() => {
+			statusMessage.classList.add("hidden");
+		}, 5000);
+	}
+
+	// Function to change the flag via Flask API
+	async function changeFlag(countryName) {
+		try {
+			// First check if we can connect to the local API
+			const flaskApiUrl = `http://localhost:5000/change-flag?country=${encodeURIComponent(countryName)}`;
+			
+			changeFlagBtn.disabled = true;
+			changeFlagBtn.textContent = "Updating...";
+			
+			const response = await fetch(flaskApiUrl, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+				},
+			});
+			
+			const responseText = await response.text();
+			
+			if (!response.ok) {
+				throw new Error(`Error: ${responseText}`);
+			}
+			
+			showStatusMessage(`Success! ${responseText}`);
+			
+			// Reload the flag data after a short delay to allow the backend to update
+			setTimeout(async () => {
+				const localData = await fetchLocalFlagData();
+				if (localData) {
+					const extendedData = await fetchCountryData(localData.country);
+					updateUI(localData, extendedData);
+				}
+			}, 1500);
+		} catch (error) {
+			console.error("Error changing flag:", error);
+			showStatusMessage(`Failed to change flag: ${error.message}. Are you connected to the same WiFi network as the Flask server?`, true);
+		} finally {
+			changeFlagBtn.disabled = false;
+			changeFlagBtn.textContent = "Update Flag";
+		}
+	}
+
 	// Main function to initialize the page
 	async function init() {
 		const localData = await fetchLocalFlagData();
@@ -123,6 +181,28 @@ document.addEventListener("DOMContentLoaded", () => {
 			const extendedData = await fetchCountryData(localData.country);
 			updateUI(localData, extendedData);
 		}
+		
+		// Set up event listeners for the flag changer
+		changeFlagBtn.addEventListener("click", () => {
+			const country = countryInput.value.trim();
+			if (country) {
+				changeFlag(country);
+			} else {
+				showStatusMessage("Please enter a country name", true);
+			}
+		});
+		
+		// Allow pressing enter in the input field
+		countryInput.addEventListener("keypress", (event) => {
+			if (event.key === "Enter") {
+				const country = countryInput.value.trim();
+				if (country) {
+					changeFlag(country);
+				} else {
+					showStatusMessage("Please enter a country name", true);
+				}
+			}
+		});
 	}
 
 	// Start the app
