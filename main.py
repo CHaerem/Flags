@@ -23,6 +23,10 @@ from io import BytesIO
 from urllib.request import urlopen
 from PIL import Image
 
+import subprocess
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FLAG_INFO_PATH = os.path.join(BASE_DIR, "github-pages", "data", "flag.json")
+
 # Update paths to use relative paths in the current directory
 CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "country_cache.json")
 FLAG_CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "flag_cache")
@@ -43,7 +47,7 @@ def get_country_data():
         logging.info("Loaded country data from cache")
         return cache
 
-    response = requests.get("https://restcountries.com/v3.1/all?fields=name,flags")
+    response = requests.get("https://restcountries.com/v3.1/all?fields=name,flags,capital,flag")
     data = response.json()
     save_cache(data)
     logging.info("Fetched country data from API and saved to cache")
@@ -93,6 +97,23 @@ def get_country_by_name(data, country_name):
             return item
     return None
 
+def update_flag_metadata(country):
+    info = {
+        "country": country['name']['common'],
+        "info": f"Capital: {country.get('capital', ['Unknown'])[0]}",
+        "emoji": country.get('flag', ''),
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
+    }
+    os.makedirs(os.path.dirname(FLAG_INFO_PATH), exist_ok=True)
+    with open(FLAG_INFO_PATH, 'w') as f:
+        json.dump(info, f, indent=2)
+    logging.info("Wrote metadata to %s", FLAG_INFO_PATH)
+    repo = os.path.join(BASE_DIR, "github-pages")
+    subprocess.run(["git", "-C", repo, "add", "data/flag.json"], check=True)
+    subprocess.run(["git", "-C", repo, "commit", "-m", f"Update flag: {info['country']}"], check=True)
+    subprocess.run(["git", "-C", repo, "push"], check=True)
+    logging.info("Pushed flag metadata to GitHub Pages")
+
 def display_flag(epd, country_name=None):
     logging.info("Displaying flag...")
 
@@ -122,6 +143,9 @@ def display_flag(epd, country_name=None):
 
     # Display the flag image
     epd.display(epd.getbuffer(resized_flag_image))
+
+    # Update GitHub Pages metadata
+    update_flag_metadata(country)
 
     logging.info(f"Displayed flag for {country['name']['common']}")
 
