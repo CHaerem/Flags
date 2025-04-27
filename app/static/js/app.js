@@ -15,6 +15,11 @@ const FlagApp = (function () {
 			const extendedData = await FlagAPI.fetchCountryData(localData.country);
 			FlagUI.updateUI(localData, extendedData);
 
+			// Initialize map with country location - using global function exposed by module
+			if (localData.country && window.updateMap) {
+				setTimeout(() => window.updateMap(localData.country), 500);
+			}
+
 			// Always show the form since we're self-hosting
 			const flagChanger = document.getElementById("flag-changer");
 			if (flagChanger) {
@@ -76,6 +81,11 @@ const FlagApp = (function () {
 				const localData = await FlagAPI.fetchLocalFlagData();
 				const extendedData = await FlagAPI.fetchCountryData(localData.country);
 				FlagUI.updateUI(localData, extendedData);
+
+				// Update map with new country location - using global function exposed by module
+				if (localData.country && window.updateMap) {
+					window.updateMap(localData.country);
+				}
 			}, 1000);
 		} catch (error) {
 			FlagUI.showStatusMessage(`Error: ${error.message}`, true);
