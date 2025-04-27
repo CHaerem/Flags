@@ -1,4 +1,4 @@
-# 🏳️‍🌈 E-Ink Flag Display with Self-Hosted Flask Server
+# 🏳️  E-Ink Flag Display with Self-Hosted Flask Server
 
 ## 🚀 Getting Started
 
@@ -26,14 +26,18 @@
 
    ```bash
    # Run manually
-   ./run.py
+   python3 run.py [--mock] [--headless] [--port PORT]
    ```
+   - `--mock`: Use mock display (web preview, no hardware required)
+   - `--headless`: Disable all display updates (metadata only)
+   - `--port`: Specify server port (default from config)
 
-4. **Run the display script**
+4. **Run the display script directly**
 
    ```bash
-   sudo python3 main.py [CountryName]
+   sudo python3 scripts/main.py [CountryName]
    ```
+   - If no country is specified, will use config or random
 
 5. **Auto-start on boot** (pick one):
 
@@ -60,6 +64,50 @@
      WantedBy=multi-user.target
      ```
 
+---
+
+## 🆕 Key Features
+
+- 📺 **E-Ink display** (Waveshare 7.3") or **Mock Display** (web preview)
+- 🌐 **Modern Flask web UI** with flag info, autocomplete, and map
+- 🖥️ **Configuration page**: Enable/disable updates, headless/mock modes, scheduling, display size
+- 🔁 **Flexible scheduling**: Time-based intervals, fixed update times, update at startup
+- 🔍 **Autocomplete** for country selection (with emoji, offline)
+- 🗺️ **World map**: Shows location of selected country
+- 🛠 **Manual/automatic flag update** via web or API
+- 🔄 **Offline/Online**: All core features work offline on local network
+- 🛡️ **Display lock**: Prevents hardware conflicts
+- 📱 **NFC tag** and 🗣️ **Google Home** integration (see below)
+
+---
+
+## 📂 Project Structure
+
+```
+project-root/
+├── run.py                      # Main Flask server entry point
+├── scripts/
+│   ├── main.py                 # Flag display & metadata update logic
+│   ├── config_manager.py       # Config and state management
+│   └── ...                     # Other utility scripts
+├── app/                        # Flask application package
+│   ├── __init__.py             # App initialization
+│   ├── routes.py               # API and web routes
+│   ├── static/                 # Static assets (css, js, data)
+│   │   ├── css/
+│   │   ├── js/                 # UI, autocomplete, map
+│   │   └── data/               # Country/flag JSON
+│   └── templates/              # HTML templates (index, config, preview)
+├── display/                    # Display drivers (e-ink, mock)
+│   ├── manager.py, lock.py, ...
+├── flag_cache/                 # Downloaded flag images
+├── requirements.txt            # Python dependencies
+└── ...
+```
+
+---
+
+
      Then enable and start the service:
 
      ```bash
@@ -70,85 +118,85 @@
 
 ---
 
-## 🎯 Features
+## ⚙️ Configuration & Modes
 
-- 📺 **E-Ink display** shows the current country's flag
-- 🌐 **Self-hosted Flask app** serves the web interface and flag data
-- 📱 **NFC tag** links directly to the Flask application
-- 🗣️ **Google Home** voice control for flag changes and queries
+- Access `/config` in the web UI to:
+  - Enable/disable flag updates
+  - Switch between **physical display**, **mock display** (web preview), or **headless** (metadata only)
+  - Set update interval (15 min, 30 min, 1h, ...)
+  - Choose fixed/random country or update at startup
+  - Adjust display width/height
+  - Manually trigger flag update
+  - See current flag info
+
+### Mock Display & Preview
+- Use `--mock` or enable mock mode in config to preview the e-ink display in the browser (`/preview`)
+- No hardware required for mock mode (great for development/testing)
+
+### Headless Mode
+- Use `--headless` or enable in config to only update metadata (no display access)
+- Useful for troubleshooting or running on non-Pi systems
+
+### Autocomplete & Map
+- Country input fields use offline autocomplete with emoji flags
+- The web UI shows a world map and highlights the selected country
+
+### API Endpoints
+- `POST /change-flag` (JSON or form): Change displayed flag
+- `POST /update-flag`: Force update (random or config country)
+- `GET /config`: View config page
 
 ---
 
-## 📂 Project Structure
+## 💻 E-Ink & Mock Display
 
-```
-project-root/
-├── run.py                      # Main Flask application entry point
-├── main.py                     # Displays flag & updates metadata
-├── app/                        # Flask application package
-│   ├── __init__.py             # App initialization
-│   ├── routes.py               # Routes definitions
-│   ├── static/                 # Static assets
-│   │   ├── css/                # Stylesheets
-│   │   ├── js/                 # JavaScript files
-│   │   └── data/               # Flag data
-│   └── templates/              # HTML templates
-├── flag_cache/                 # Downloaded flag images
-└── docs/                       # Legacy GitHub Pages (deprecated)
-```
+- **Physical e-ink display** (Waveshare 7.3") supported on Raspberry Pi
+- **Mock display** provides a web preview for any system
+- **Display lock** ensures safe access (prevents hardware conflicts)
 
 ---
 
-## 💻 E-Ink Display (Raspberry Pi)
-
-- Uses [`epd7in3f`](https://github.com/waveshare/e-Paper)
-- **main.py**:
-  1. Fetches country data & flag image (with caching)
-  2. Resizes and displays on e-ink
-  3. Writes metadata to `app/static/data/flag.json`
-  4. (Optional) `git add && git commit && git push`
-
+## 🗂 Example flag.json
 ```json
-// example flag.json
 {
-	"country": "Argentina",
-	"info": "Capital: Buenos Aires",
-	"emoji": "🇦🇷",
-	"timestamp": "2025-04-25 14:30:00"
+  "country": "Argentina",
+  "info": "Capital: Buenos Aires",
+  "emoji": "🇦🇷",
+  "timestamp": "2025-04-25 14:30:00",
+  "population": 45376763,
+  "region": "Americas",
+  "subregion": "South America",
+  "languages": {"spa": "Spanish"},
+  "currencies": {"ARS": {"symbol": "$", "name": "Argentine peso"}},
+  "timezones": ["UTC-03:00"]
 }
 ```
 
+---
+
 ## 📱 NFC Integration
 
-1. Install NFC Tools on your phone
-2. Write URL `https://smartpi.local:5000/` to the tag
-3. Tap the tag to open the flag info page
+- **NFC**: Write your Pi's web URL to an NFC tag for instant access
+- **Google Home**: *(Planned feature, not yet implemented)*
 
-## 🗣️ Google Home (Local)
+---
 
-- **Flask API (run.py):**
-
-  ```
-  POST https://smartpi.local:5000/change-flag?country=Brazil
-  ```
-
-- **Local Home SDK (local-home-app.js):**
-  - Sends POST /change-flag?country=XYZ to your Pi
-
-## 🔄 Offline / Online Matrix
+## 🔄 Offline/Online Matrix
 
 | Component     | Offline | Source                    |
 | ------------- | ------- | ------------------------- |
 | E-ink display | ✅      | Local on Raspberry Pi     |
 | Web Interface | ✅      | Self-hosted Flask app     |
-| Google Home   | ✅      | Local Home SDK → Pi       |
+| Google Home   | 🚧      | *(Planned, not available)*|
 | NFC tag       | ✅      | Static HTTPS link to page |
 
-## 🛠 To Do
+---
 
-- Support random flag rotation
-- Add search functionality
-- Implement dark/light theme toggle
+## 🛠 To Do
+- Add more scheduling options
+- Improve dark/light theme
+- More map features
+- Multi-language support
 
 ---
 
@@ -158,7 +206,29 @@ Christopher Hærem
 📧 chris.haerem@gmail.com  
 🔗 https://github.com/CHaerem
 
-## Deployment Instructions
+---
+
+## 📝 Deployment & Troubleshooting
+
+- See above for systemd/cron setup for auto-start
+- Logs: check `flask_api.log` or use `journalctl -u flag-app`
+- For troubleshooting, try `--mock` or `--headless` to isolate issues
+- All configuration can be managed through `/config` in the web UI
+
+If the application isn't working as expected:
+
+1. Check the service logs:
+
+   ```bash
+   sudo journalctl -u flag-app
+   tail -f flask_api.log
+   ```
+2. Try running in mock/headless mode to debug
+3. Ensure all dependencies are installed (see requirements.txt)
+4. For hardware issues, check display cables and power
+
+---
+
 
 To deploy the flag display application to your Raspberry Pi:
 
