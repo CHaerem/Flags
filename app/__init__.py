@@ -12,10 +12,7 @@ def create_app():
          allow_headers=["Content-Type"],
          supports_credentials=False)
     
-    # Import routes after app is created to avoid circular imports
-    from app import routes
-    
-    # Register blueprints
+    # Import routes and register blueprint
     from app.routes import main
     app.register_blueprint(main)
     

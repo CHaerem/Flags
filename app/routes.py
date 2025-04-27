@@ -1,9 +1,11 @@
 import os
 import json
 import logging
-from flask import request, jsonify, render_template, send_from_directory
-from app import app
+from flask import Blueprint, request, jsonify, render_template, send_from_directory
 import sys
+
+# Create a Blueprint instance
+main = Blueprint('main', __name__)
 
 # Add scripts directory to path for imports
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'scripts'))
@@ -14,15 +16,15 @@ try:
 except Exception as e:
     print(f"Error importing update_flag: {e}")
 
-@app.route('/')
+@main.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/static/<path:path>')
+@main.route('/static/<path:path>')
 def send_static(path):
     return send_from_directory('static', path)
 
-@app.route('/change-flag', methods=['POST'])
+@main.route('/change-flag', methods=['POST'])
 def change_flag():
     data = request.args
     country = data.get('country')
@@ -38,6 +40,6 @@ def change_flag():
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-@app.route('/config', methods=['GET'])
+@main.route('/config', methods=['GET'])
 def get_config():
     return render_template('config.html')
