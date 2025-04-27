@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 # Import required modules
 from app import create_app
 from scripts.config_manager import load_config
-from scripts.country_manager import prepare_country_data
+from scripts.prepare_country_data import prepare_country_data
 from scripts.update_flag import update_flag_safely
 
 # Import display manager
