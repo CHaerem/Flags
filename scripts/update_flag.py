@@ -83,7 +83,7 @@ def update_flag_safely(country_name=None):
     # Try to update the physical display with proper locking
     try:
         # First try to acquire the display lock
-        with DisplayLock(timeout=15) as lock:
+        with DisplayLock(timeout=40) as lock:
             if not lock.acquired:
                 logger.warning("Could not acquire display lock, skipping physical display update")
                 return 0

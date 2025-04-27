@@ -16,7 +16,7 @@ class DisplayLock:
     This prevents GPIO conflicts when multiple processes attempt to update the display simultaneously.
     """
     
-    def __init__(self, lock_file=None, timeout=10):
+    def __init__(self, lock_file=None, timeout=40):
         """Initialize the display lock with the specified lock file and timeout."""
         # Base directory of this project (~/Flags)
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
