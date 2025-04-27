@@ -15,6 +15,9 @@ import requests
 from PIL import Image
 from waveshare_epd import epd7in3f
 
+# Import the config manager
+from config_manager import load_config, update_current_flag, get_flag_display_settings
+
 logging.basicConfig(level=logging.DEBUG)
 
 # Base directory of this project (~/Flags)
@@ -168,56 +171,60 @@ def get_country_by_name(data, name):
     logging.warning(f"No matching country found for '{name}'")
     return None
 
+# Updated to use the config_manager
 def update_flag_metadata(country):
-    # Build the metadata with comprehensive country information
-    info = {
-        "country": country['name']['common'] if 'name' in country and 'common' in country['name'] else "Unknown",
-        "info": f"Capital: {country.get('capital', ['Unknown'])[0] if country.get('capital') else 'Unknown'}",
-        "emoji": country.get('flag', ''),
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S")
-    }
+    # Load the config
+    config = load_config()
     
-    # Check if the country has extended information and add it to the metadata
-    if 'population' in country:
-        info['population'] = country['population']
-    if 'region' in country:
-        info['region'] = country['region']
-    if 'subregion' in country:
-        info['subregion'] = country['subregion']
-    if 'languages' in country:
-        info['languages'] = country['languages']
-    if 'currencies' in country:
-        info['currencies'] = country['currencies']
-    if 'timezones' in country:
-        info['timezones'] = country['timezones']
-
-    # Define the gitignored file path
-    gitignored_flag_path = os.path.join(BASE_DIR, "current_flag.json")
-
-    # Only write to the gitignored file
-    with open(gitignored_flag_path, 'w') as f:
-        json.dump(info, f, indent=2)
-    logging.info("Wrote metadata to gitignored file %s", gitignored_flag_path)
+    # Update the current flag information in the config
+    update_current_flag(config, country)
+    
+    # Also update the FLAG_INFO_PATH for backward compatibility
+    os.makedirs(os.path.dirname(FLAG_INFO_PATH), exist_ok=True)
+    with open(FLAG_INFO_PATH, 'w') as f:
+        json.dump(config['current_flag'], f, indent=2)
+    
+    logging.info(f"Updated flag metadata for {country['name']['common']}")
 
 def display_flag(epd, country_name=None):
     logging.info("Displaying flag...")
+    
+    # Load configuration
+    config = load_config()
+    settings = config.get('flag_display', {})
 
+    # Get country data
     data = get_country_data()
+    
+    # Check if we're using a specific country from the config
+    if not country_name and settings.get('mode') == 'fixed' and settings.get('fixed_country'):
+        country_name = settings.get('fixed_country')
+        logging.info(f"Using fixed country from config: {country_name}")
+
+    # Get the country
     country = get_country_by_name(data, country_name) if country_name else None
     if country_name and not country:
-        raise ValueError(f"Country '{country_name}' not recognized")
+        logging.warning(f"Country '{country_name}' not recognized, using random country instead")
+        country = None
+        
     if not country:
         # Select a random country from the dictionary
         random_key = random.choice(list(data.keys()))
         country = data[random_key]
+        logging.info(f"Selected random country: {country['name']['common']}")
 
+    # Get the flag image
     img = get_flag(country)
     
     # Update metadata
     update_flag_metadata(country)
     
+    # Adjust display size based on config if available
+    display_width = config.get('display', {}).get('width', epd.width)
+    display_height = config.get('display', {}).get('height', epd.height)
+    
     # Display the flag on the e-paper display
-    resized = img.resize((epd.width, epd.height), Image.Resampling.LANCZOS)
+    resized = img.resize((display_width, display_height), Image.Resampling.LANCZOS)
     epd.display(epd.getbuffer(resized))
     logging.info(f"Displayed flag for {country['name']['common'] if 'name' in country and 'common' in country['name'] else 'Unknown'}")
 

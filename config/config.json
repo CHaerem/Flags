@@ -1,0 +1,20 @@
+{
+  "flag_display": {
+    "enabled": true,
+    "update_interval_minutes": 30,
+    "update_at_startup": true,
+    "mode": "random",
+    "fixed_country": "",
+    "last_updated": ""
+  },
+  "display": {
+    "width": 800,
+    "height": 480
+  },
+  "current_flag": {
+    "country": "",
+    "info": "",
+    "emoji": "",
+    "timestamp": ""
+  }
+}

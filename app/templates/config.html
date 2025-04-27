@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flag Display Configuration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #2c3e50;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        input[type="checkbox"] {
+            margin-right: 5px;
+        }
+        button {
+            background-color: #2c3e50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #1a252f;
+        }
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #f9f9f9;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .nav {
+            margin-bottom: 20px;
+        }
+        .nav a {
+            margin-right: 15px;
+            color: #2c3e50;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .nav a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <a href="/">Home</a>
+        <a href="/config">Configuration</a>
+    </div>
+
+    <h1>Flag Display Configuration</h1>
+
+    {% if message %}
+    <div class="status {% if success %}success{% else %}error{% endif %}">
+        {{ message }}
+    </div>
+    {% endif %}
+
+    <form method="POST">
+        <div class="card">
+            <h2>Flag Display Settings</h2>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="enabled" {% if config.flag_display.enabled %}checked{% endif %}>
+                    Enable flag display updates
+                </label>
+            </div>
+            <div class="form-group">
+                <label for="update_interval">Update Interval (minutes):</label>
+                <input type="number" id="update_interval" name="update_interval" value="{{ config.flag_display.update_interval_minutes }}" min="1" required>
+            </div>
+            <div class="form-group">
+                <label>
+                    <input type="checkbox" name="update_at_startup" {% if config.flag_display.update_at_startup %}checked{% endif %}>
+                    Update flag at startup
+                </label>
+            </div>
+            <div class="form-group">
+                <label for="display_mode">Display Mode:</label>
+                <select id="display_mode" name="display_mode">
+                    <option value="random" {% if config.flag_display.mode == 'random' %}selected{% endif %}>Random</option>
+                    <option value="fixed" {% if config.flag_display.mode == 'fixed' %}selected{% endif %}>Fixed Country</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="fixed_country">Fixed Country (if mode is set to Fixed):</label>
+                <input type="text" id="fixed_country" name="fixed_country" value="{{ config.flag_display.fixed_country }}">
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Display Settings</h2>
+            <div class="form-group">
+                <label for="display_width">Display Width (pixels):</label>
+                <input type="number" id="display_width" name="display_width" value="{{ config.display.width }}" min="1" required>
+            </div>
+            <div class="form-group">
+                <label for="display_height">Display Height (pixels):</label>
+                <input type="number" id="display_height" name="display_height" value="{{ config.display.height }}" min="1" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <button type="submit">Save Configuration</button>
+        </div>
+    </form>
+
+    <div class="card">
+        <h2>Current Flag</h2>
+        {% if config.current_flag.country %}
+        <p><strong>Country:</strong> {{ config.current_flag.country }} {{ config.current_flag.emoji }}</p>
+        <p><strong>Info:</strong> {{ config.current_flag.info }}</p>
+        <p><strong>Last Updated:</strong> {{ config.current_flag.timestamp }}</p>
+        {% else %}
+        <p>No flag information available.</p>
+        {% endif %}
+    </div>
+
+    <div class="card">
+        <h2>Manual Flag Update</h2>
+        <form method="POST" action="/update-flag">
+            <button type="submit">Update Flag Now</button>
+        </form>
+    </div>
+</body>
+</html>

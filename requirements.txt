@@ -3,3 +3,4 @@ Pillow
 waveshare-epd
 Flask
 flask-cors
+APScheduler==3.10.4
