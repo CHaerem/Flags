@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Flag Display Configuration</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Nunito', Arial, sans-serif;
             line-height: 1.6;
             max-width: 800px;
             margin: 0 auto;
@@ -82,6 +84,36 @@
         .nav a:hover {
             text-decoration: underline;
         }
+        /* Autocomplete styling */
+        .autocomplete-container {
+            position: relative;
+            width: 100%;
+        }
+        .autocomplete-items {
+            position: absolute;
+            border: 1px solid #ddd;
+            border-top: none;
+            z-index: 99;
+            top: 100%;
+            left: 0;
+            right: 0;
+            max-height: 200px;
+            overflow-y: auto;
+            background-color: white;
+            border-radius: 0 0 4px 4px;
+        }
+        .autocomplete-item {
+            padding: 8px 10px;
+            cursor: pointer;
+            background-color: #fff;
+            border-bottom: 1px solid #ddd;
+        }
+        .autocomplete-item:hover {
+            background-color: #e9e9e9;
+        }
+        .autocomplete-item .flag-emoji {
+            margin-right: 8px;
+        }
     </style>
 </head>
 <body>
@@ -136,7 +168,10 @@
             </div>
             <div class="form-group">
                 <label for="fixed_country">Fixed Country (if mode is set to Fixed):</label>
-                <input type="text" id="fixed_country" name="fixed_country" value="{{ config.flag_display.fixed_country }}">
+                <div class="autocomplete-container">
+                    <input type="text" id="fixed_country" name="fixed_country" value="{{ config.flag_display.fixed_country }}" autocomplete="off">
+                    <div id="country-suggestions" class="autocomplete-items"></div>
+                </div>
             </div>
         </div>
 
@@ -174,5 +209,83 @@
             <button type="submit">Update Flag Now</button>
         </form>
     </div>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+    <script>
+        // Config page specific autocomplete for the fixed country field
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Get all countries data
+            const countryData = await FlagAPI.loadAllCountryData();
+            const fixedCountryInput = document.getElementById('fixed_country');
+            const countrySuggestions = document.getElementById('country-suggestions');
+
+            // Only show country suggestions when the input is focused
+            fixedCountryInput.addEventListener('focus', function() {
+                showSuggestions();
+            });
+
+            // Filter suggestions as the user types
+            fixedCountryInput.addEventListener('input', function() {
+                showSuggestions();
+            });
+
+            // Hide suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (e.target !== fixedCountryInput && e.target !== countrySuggestions) {
+                    countrySuggestions.innerHTML = '';
+                }
+            });
+
+            function showSuggestions() {
+                const input = fixedCountryInput.value.toLowerCase();
+                countrySuggestions.innerHTML = '';
+
+                // Find all matches
+                const matches = [];
+                for (const [name, data] of Object.entries(countryData)) {
+                    if (name.toLowerCase().includes(input) || (input && input.length > 0)) {
+                        matches.push({
+                            name: name,
+                            emoji: data.flag || ''
+                        });
+                        
+                        // Limit to 10 suggestions for performance
+                        if (matches.length >= 10) break;
+                    }
+                }
+
+                // Sort matches alphabetically
+                matches.sort((a, b) => a.name.localeCompare(b.name));
+
+                // Create suggestion elements
+                matches.forEach(country => {
+                    const item = document.createElement('div');
+                    item.className = 'autocomplete-item';
+                    
+                    // Add emoji if available
+                    if (country.emoji) {
+                        const emojiSpan = document.createElement('span');
+                        emojiSpan.className = 'flag-emoji';
+                        emojiSpan.textContent = country.emoji;
+                        item.appendChild(emojiSpan);
+                    }
+                    
+                    // Add country name
+                    const nameSpan = document.createElement('span');
+                    nameSpan.textContent = country.name;
+                    item.appendChild(nameSpan);
+                    
+                    // Add click handler
+                    item.addEventListener('click', function() {
+                        fixedCountryInput.value = country.name;
+                        countrySuggestions.innerHTML = '';
+                    });
+                    
+                    countrySuggestions.appendChild(item);
+                });
+            }
+        });
+    </script>
 </body>
 </html>

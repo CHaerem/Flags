@@ -68,3 +68,63 @@ def get_config():
     
     # Render the config template with the configuration data
     return render_template('config.html', config=config)
+
+@main.route('/config', methods=['POST'])
+def save_config():
+    # Import config_manager here to avoid circular imports
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'scripts'))
+    from config_manager import load_config, save_config
+    
+    # Load existing configuration
+    config = load_config()
+    
+    # Update configuration from form data
+    config['flag_display']['enabled'] = 'enabled' in request.form
+    config['flag_display']['headless'] = 'headless' in request.form
+    config['flag_display']['update_interval_minutes'] = int(request.form.get('update_interval', 30))
+    config['flag_display']['update_at_startup'] = 'update_at_startup' in request.form
+    config['flag_display']['mode'] = request.form.get('display_mode', 'random')
+    config['flag_display']['fixed_country'] = request.form.get('fixed_country', '')
+    
+    # Update display config
+    config['display']['width'] = int(request.form.get('display_width', 800))
+    config['display']['height'] = int(request.form.get('display_height', 480))
+    
+    # Save the configuration
+    save_config(config)
+    
+    # Reload the configuration to ensure it was saved correctly
+    config = load_config()
+    
+    # Render the config template with the updated configuration data
+    return render_template('config.html', config=config, message="Configuration saved successfully!", success=True)
+
+@main.route('/update-flag', methods=['POST'])
+def update_flag_now():
+    # Import update_flag
+    try:
+        # Force cleanup the lock file if there were recent timeouts and use random country
+        success = update_flag_safely(None, force_cleanup=True)
+        
+        # Import config_manager to load the current configuration
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'scripts'))
+        from config_manager import load_config
+        config = load_config()
+        
+        if success == 0:
+            return render_template('config.html', config=config, message="Flag updated successfully!", success=True)
+        else:
+            return render_template('config.html', config=config, 
+                                  message="Flag metadata updated, but physical display may not have updated.", 
+                                  success=True)
+            
+    except Exception as e:
+        logging.error(f"Error updating flag: {str(e)}", exc_info=True)
+        # Import config_manager to load the current configuration
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'scripts'))
+        from config_manager import load_config
+        config = load_config()
+        
+        return render_template('config.html', config=config, 
+                              message=f"Error updating flag: {str(e)}", 
+                              success=False)
