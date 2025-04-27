@@ -135,6 +135,10 @@ class DisplayManager:
             if not self._initialize_display():
                 return False
         
+        # Get custom width and height from config if available
+        custom_width = self.config.get('display', {}).get('width')
+        custom_height = self.config.get('display', {}).get('height')
+        
         # Use a thread lock to prevent concurrent access from the same process
         with self._lock:
             # Use a file lock to prevent concurrent access from different processes
@@ -144,7 +148,11 @@ class DisplayManager:
                     return False
                 
                 try:
-                    result = self._display.display_image(image)
+                    result = self._display.display_image(
+                        image, 
+                        custom_width=custom_width,
+                        custom_height=custom_height
+                    )
                     self._display.sleep()
                     return result
                 except Exception as e:

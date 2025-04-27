@@ -51,6 +51,14 @@ def update_flag_safely(country_name=None, force_cleanup=False):
     config = load_config()
     display_config = config.get('flag_display', {})
     
+    # Check if we should use fixed country from configuration
+    # When no specific country is requested and mode is set to fixed
+    if country_name is None and display_config.get('mode') == 'fixed':
+        fixed_country = display_config.get('fixed_country')
+        if fixed_country:
+            logger.info(f"Using fixed country from configuration: {fixed_country}")
+            country_name = fixed_country
+    
     # Get display manager with current config
     display_manager = get_display_manager(display_config)
     

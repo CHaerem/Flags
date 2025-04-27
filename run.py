@@ -80,7 +80,7 @@ def setup_scheduler(app):
     scheduler.start()
     
     # Explicitly check if we should run an immediate update
-    if settings.get('enabled', True) and settings.get('update_on_start', True):
+    if settings.get('enabled', True) and settings.get('update_at_startup', True):
         time.sleep(1)  # Short delay to ensure app has started
         scheduler.add_job(
             func=update_flag_display,

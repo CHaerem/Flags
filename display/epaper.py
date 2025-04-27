@@ -83,12 +83,14 @@ class EPaperDisplay:
             self.initialized = False
             return False
 
-    def display_image(self, image):
+    def display_image(self, image, custom_width=None, custom_height=None):
         """
         Display an image on the e-paper display.
         
         Args:
             image (PIL.Image): The image to display. Will be resized to fit the display.
+            custom_width (int, optional): Custom display width to override the default.
+            custom_height (int, optional): Custom display height to override the default.
             
         Returns:
             bool: True if successful, False otherwise
@@ -103,13 +105,17 @@ class EPaperDisplay:
             if not self.init():
                 return False
                 
+            # Use custom dimensions if provided, otherwise use hardware defaults
+            target_width = custom_width if custom_width is not None else self.width
+            target_height = custom_height if custom_height is not None else self.height
+                
             # Resize image if needed
-            if image.size != (self.width, self.height):
-                image = image.resize((self.width, self.height), Image.Resampling.LANCZOS)
+            if image.size != (target_width, target_height):
+                image = image.resize((target_width, target_height), Image.Resampling.LANCZOS)
                 
             # Display the image
             self._epd.display(self._epd.getbuffer(image))
-            logger.info("Image displayed successfully")
+            logger.info(f"Image displayed successfully at size: {target_width}x{target_height}")
             return True
         except Exception as e:
             logger.error(f"Error displaying image: {e}")
