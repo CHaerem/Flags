@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Try to import main with required functions
 try:
     # Only import display_flag function to avoid triggering GPIO initialization
-    from scripts.main import update_flag_metadata, get_country_by_name, get_country_data, get_flag
+    from main import update_flag_metadata, get_country_by_name, get_country_data, get_flag
     FLAG_FUNCTIONS_AVAILABLE = True
 except Exception as e:
     logger.error(f"Error importing flag functions: {e}")
