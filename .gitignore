@@ -1,5 +1,5 @@
 # Python bytecode
-__pycache__/
+**/__pycache__/
 *.py[cod]
 *$py.class
 
@@ -35,8 +35,3 @@ certs/
 # Locally generated data
 docs/data/flag.json
 current_flag.json
-
-# May want to exclude large cache directories if they're generated
-# Uncomment if you want to exclude these
-# flag_cache/
-# country_cache.json
