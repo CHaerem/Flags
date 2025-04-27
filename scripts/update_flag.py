@@ -40,10 +40,21 @@ except Exception as e:
     logger.error(f"Error importing waveshare module: {e}")
     EPD_MODULE_AVAILABLE = False
 
-def update_flag_safely(country_name=None):
+def update_flag_safely(country_name=None, force_cleanup=False):
     """Update flag with proper display lock handling"""
     config = load_config()
     headless_mode = config.get('flag_display', {}).get('headless', False)
+    
+    # If force cleanup is enabled, try to remove any existing lock file
+    if force_cleanup:
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        lock_file = os.path.join(base_dir, ".display.lock")
+        if os.path.exists(lock_file):
+            try:
+                os.remove(lock_file)
+                logger.warning(f"Force removed lock file: {lock_file}")
+            except Exception as e:
+                logger.error(f"Failed to force remove lock file: {e}")
     
     # If we can't import the required modules, run in headless mode
     if not EPD_AVAILABLE:
