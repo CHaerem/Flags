@@ -42,4 +42,12 @@ def change_flag():
 
 @main.route('/config', methods=['GET'])
 def get_config():
-    return render_template('config.html')
+    # Import config_manager here to avoid circular imports
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'scripts'))
+    from config_manager import load_config
+    
+    # Load the configuration
+    config = load_config()
+    
+    # Render the config template with the configuration data
+    return render_template('config.html', config=config)
