@@ -135,12 +135,27 @@ class EPaperDisplay:
             return False
             
         try:
+            # Try to re-initialize if needed before sleeping
+            if not self.initialized:
+                self._initialize()
+                
             self._epd.sleep()
             logger.debug("Display put to sleep")
             return True
         except Exception as e:
             logger.error(f"Error putting display to sleep: {e}")
-            return False
+            # Try to reset the hardware connection
+            try:
+                from waveshare_epd import epd7in3f
+                epd7in3f.epdconfig.module_exit()
+                time.sleep(0.5)  # Give hardware time to reset
+                self._initialize()  # Attempt to re-initialize
+                return True  # Return success even if sleep failed but we recovered
+            except Exception as reinit_error:
+                logger.error(f"Failed to reset display hardware: {reinit_error}")
+                self.initialized = False
+                self._epd = None
+                return False
             
     def close(self):
         """
