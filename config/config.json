@@ -5,9 +5,9 @@
     "update_at_startup": true,
     "mode": "random",
     "fixed_country": "",
-    "last_updated": "2025-04-27 19:49:52",
+    "last_updated": "2025-04-27 20:00:00",
     "headless": false,
-    "use_mock": true,
+    "use_mock": false,
     "use_fixed_times": true,
     "time_interval": 15,
     "start_hour": 0,
@@ -21,28 +21,24 @@
     "port": 80
   },
   "current_flag": {
-    "country": "Brunei",
-    "info": "Capital: Bandar Seri Begawan",
-    "emoji": "\ud83c\udde7\ud83c\uddf3",
-    "timestamp": "2025-04-27 19:49:52",
-    "population": 437483,
-    "region": "Asia",
-    "subregion": "South-Eastern Asia",
+    "country": "Saint Barth\u00e9lemy",
+    "info": "Capital: Gustavia",
+    "emoji": "\ud83c\udde7\ud83c\uddf1",
+    "timestamp": "2025-04-27 20:00:00",
+    "population": 4255,
+    "region": "Americas",
+    "subregion": "Caribbean",
     "languages": {
-      "msa": "Malay"
+      "fra": "French"
     },
     "currencies": {
-      "BND": {
-        "symbol": "$",
-        "name": "Brunei dollar"
-      },
-      "SGD": {
-        "symbol": "$",
-        "name": "Singapore dollar"
+      "EUR": {
+        "symbol": "\u20ac",
+        "name": "Euro"
       }
     },
     "timezones": [
-      "UTC+08:00"
+      "UTC-04:00"
     ]
   }
 }
