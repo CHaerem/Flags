@@ -2,6 +2,7 @@ import os
 import json
 import subprocess
 import sys
+import logging
 from flask import Blueprint, render_template, request, jsonify, make_response, current_app, send_from_directory, redirect, url_for
 
 # Add scripts directory to path so we can import from it
@@ -9,8 +10,9 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 scripts_dir = os.path.join(os.path.dirname(current_dir), "scripts")
 sys.path.append(scripts_dir)
 
-# Import configuration manager
+# Import configuration manager and display lock
 from scripts.config_manager import load_config, save_config, update_flag_display_settings
+from scripts.display_lock import DisplayLock
 
 # Create blueprint
 main = Blueprint('main', __name__)
@@ -69,7 +71,7 @@ def update_flag_now():
     try:
         # Get the base directory path
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        script = os.path.join(base_dir, "scripts", "main.py")
+        script = os.path.join(base_dir, "scripts", "update_flag.py")  # Use the new wrapper script
         
         # Run the script to update the flag
         cmd = ["python3", script]
@@ -134,19 +136,33 @@ def change_flag():
     if not country:
         return "Missing ?country=…", 400
 
-    # Get the base directory path
-    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    script = os.path.join(base_dir, "scripts", "main.py")
-    
-    # Run the script to change the flag
-    cmd = ["sudo", "-u", "chris", "python3", script, country]
-    proc = subprocess.run(cmd, capture_output=True, text=True)
-    
-    if proc.returncode != 0:
-        return f"Error: {proc.stderr.strip()}", 500
-    
-    # Prepare response
-    resp = make_response(f"Flag changed to {country}", 200)
-    resp.headers["Access-Control-Allow-Origin"] = "*"
-    
-    return resp
+    try:
+        # Get the base directory path
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        script = os.path.join(base_dir, "scripts", "update_flag.py")  # Use the new wrapper script
+        
+        # Run the script to change the flag
+        cmd = ["sudo", "-u", "chris", "python3", script, country]
+        
+        # Run the script and capture output
+        proc = subprocess.run(cmd, capture_output=True, text=True)
+        
+        # Log the output for debugging
+        if proc.stdout:
+            current_app.logger.info(f"Script output: {proc.stdout.strip()}")
+        
+        # Check for errors
+        if proc.returncode != 0:
+            error_msg = proc.stderr.strip() if proc.stderr else "Unknown error"
+            current_app.logger.error(f"Error changing flag to {country}: {error_msg}")
+            return f"Error: {error_msg}", 500
+        
+        # Prepare successful response
+        resp = make_response(f"Flag changed to {country}", 200)
+        resp.headers["Access-Control-Allow-Origin"] = "*"
+        
+        return resp
+        
+    except Exception as e:
+        current_app.logger.error(f"Exception during flag change: {str(e)}")
+        return f"Error: {str(e)}", 500
