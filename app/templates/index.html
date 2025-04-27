@@ -12,6 +12,10 @@
 			rel="stylesheet"
 			href="{{ url_for('static', filename='css/styles.css') }}"
 		/>
+		<link
+			rel="stylesheet"
+			href="{{ url_for('static', filename='css/country_picker.css') }}"
+		/>
 
 		<style>
 			.nav-menu {
@@ -131,13 +135,17 @@
 					<div class="form-group">
 						<label for="country-input">Enter Country Name:</label>
 						<div class="autocomplete-container">
-							<input
-								type="text"
-								id="country-input"
-								placeholder="e.g., Norway, Japan, Brazil"
-								autocomplete="off"
-							/>
-							<div id="country-suggestions" class="autocomplete-items"></div>
+							<div style="display: flex; gap: 8px; align-items: center;">
+  <input
+    type="text"
+    id="country-input"
+    placeholder="e.g., Norway, Japan, Brazil"
+    autocomplete="off"
+    style="flex: 1;"
+  />
+  <button type="button" id="country-picker-btn" class="btn btn-secondary" aria-label="Pick country from list" style="padding: 6px 12px; font-size: 1.1em;">🌍</button>
+</div>
+<div id="country-suggestions" class="autocomplete-items"></div>
 						</div>
 					</div>
 					<button id="change-flag-btn" class="btn">Update Flag</button>
@@ -152,5 +160,6 @@
 		<script src="{{ url_for('static', filename='js/autocomplete.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/map.js') }}"></script>
 		<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/country_picker.js') }}"></script>
 	</body>
 </html>
