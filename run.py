@@ -9,6 +9,7 @@ import datetime
 import time
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
+from apscheduler.triggers.cron import CronTrigger
 from flask import Flask
 
 # Configure logging
@@ -55,6 +56,67 @@ def update_flag_display():
     except Exception as e:
         logger.error(f"Error updating flag display: {e}", exc_info=True)
 
+def setup_time_based_schedule(scheduler, settings):
+    """Set up time-based scheduling for flag updates"""
+    # Get configuration values
+    time_interval = int(settings.get('time_interval', 30))
+    start_hour = int(settings.get('start_hour', 0))
+    start_minute = int(settings.get('start_minute', 0))
+    
+    # Generate the cron trigger expressions
+    if time_interval < 60:
+        # For intervals less than an hour, use minute-based cron
+        # Calculate which minutes of each hour to run on
+        minutes = []
+        current = start_minute
+        while current < 60:
+            minutes.append(current)
+            current += time_interval
+        
+        minute_expr = ','.join(map(str, minutes))
+        logger.info(f"Time-based updates scheduled at minutes {minute_expr} of every hour")
+        
+        scheduler.add_job(
+            func=update_flag_display,
+            trigger=CronTrigger(minute=minute_expr),
+            id='flag_update_job',
+            name='Update flag display (time-based)',
+            replace_existing=True
+        )
+    elif time_interval == 60:
+        # For exactly 1 hour interval
+        logger.info(f"Time-based updates scheduled every hour at :{start_minute:02d}")
+        
+        scheduler.add_job(
+            func=update_flag_display,
+            trigger=CronTrigger(minute=start_minute),
+            id='flag_update_job',
+            name='Update flag display (hourly)',
+            replace_existing=True
+        )
+    else:
+        # For intervals of multiple hours
+        hours_interval = time_interval // 60
+        hours = []
+        current_hour = start_hour
+        
+        while current_hour < 24:
+            hours.append(current_hour)
+            current_hour += hours_interval
+            if current_hour >= 24:
+                break
+        
+        hour_expr = ','.join(map(str, hours))
+        logger.info(f"Time-based updates scheduled at {hour_expr}:{start_minute:02d}")
+        
+        scheduler.add_job(
+            func=update_flag_display,
+            trigger=CronTrigger(hour=hour_expr, minute=start_minute),
+            id='flag_update_job',
+            name='Update flag display (time-based)',
+            replace_existing=True
+        )
+
 def setup_scheduler(app):
     """Set up the background scheduler for periodic tasks."""
     scheduler = BackgroundScheduler()
@@ -64,15 +126,8 @@ def setup_scheduler(app):
     
     # Add flag update job if enabled
     if settings.get('enabled', True):
-        update_interval = int(settings.get('update_interval', 30))
-        logger.info(f"Flag display updates enabled - will update every {update_interval} minutes")
-        
-        scheduler.add_job(
-            func=update_flag_display,
-            trigger=IntervalTrigger(minutes=update_interval),
-            id='flag_update_job',
-            name='Update flag display',
-            replace_existing=True)
+        # Use time-based scheduling
+        setup_time_based_schedule(scheduler, settings)
     else:
         logger.info("Flag display updates are disabled")
 

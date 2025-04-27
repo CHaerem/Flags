@@ -25,7 +25,12 @@ def _ensure_config_file():
                 "update_at_startup": True,
                 "mode": "random",
                 "fixed_country": "",
-                "last_updated": ""
+                "last_updated": "",
+                "use_fixed_times": False,
+                "time_interval": 30,
+                "start_hour": 0,
+                "start_minute": 0,
+                "headless": False
             },
             "display": {
                 "width": 800,

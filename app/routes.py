@@ -81,7 +81,15 @@ def save_config():
     # Update configuration from form data
     config['flag_display']['enabled'] = 'enabled' in request.form
     config['flag_display']['headless'] = 'headless' in request.form
-    config['flag_display']['update_interval_minutes'] = int(request.form.get('update_interval', 30))
+    
+    # Always use time-based scheduling
+    config['flag_display']['use_fixed_times'] = True
+    
+    # Save time-based scheduling options
+    config['flag_display']['time_interval'] = int(request.form.get('time_interval', 30))
+    config['flag_display']['start_hour'] = int(request.form.get('start_hour', 0))
+    config['flag_display']['start_minute'] = int(request.form.get('start_minute', 0))
+    
     config['flag_display']['update_at_startup'] = 'update_at_startup' in request.form
     config['flag_display']['mode'] = request.form.get('display_mode', 'random')
     config['flag_display']['fixed_country'] = request.form.get('fixed_country', '')

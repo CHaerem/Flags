@@ -130,6 +130,32 @@
         .autocomplete-active {
             background-color: #e9f4ff !important;
         }
+        .radio-group {
+            margin-bottom: 10px;
+        }
+        
+        .radio-option {
+            margin-right: 15px;
+            cursor: pointer;
+        }
+        
+        .schedule-option {
+            margin-top: 10px;
+            margin-left: 25px;
+            padding: 10px;
+            border-left: 3px solid #eee;
+        }
+        
+        .time-inputs {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .time-inputs select, .time-inputs input {
+            width: auto;
+        }
     </style>
 </head>
 <body>
@@ -165,10 +191,49 @@
                     The system will still update flag metadata but won't attempt to access the physical display.
                 </p>
             </div>
+            
+            <!-- Updated update scheduling options - time-based only -->
             <div class="form-group">
-                <label for="update_interval">Update Interval (minutes):</label>
-                <input type="number" id="update_interval" name="update_interval" value="{{ config.flag_display.update_interval_minutes }}" min="1" required>
+                <label>Update Schedule:</label>
+                <!-- Hidden field to maintain use_fixed_times in the backend -->
+                <input type="hidden" name="schedule_type" value="fixed_times">
+                
+                <!-- Time-based option -->
+                <div class="schedule-option">
+                    <div class="time-inputs">
+                        <label>Update every:</label>
+                        <select id="time_interval" name="time_interval">
+                            <option value="15" {% if config.flag_display.time_interval == 15 %}selected{% endif %}>15 minutes</option>
+                            <option value="30" {% if config.flag_display.time_interval == 30 %}selected{% endif %}>30 minutes</option>
+                            <option value="60" {% if config.flag_display.time_interval == 60 %}selected{% endif %}>1 hour</option>
+                            <option value="120" {% if config.flag_display.time_interval == 120 %}selected{% endif %}>2 hours</option>
+                            <option value="180" {% if config.flag_display.time_interval == 180 %}selected{% endif %}>3 hours</option>
+                            <option value="240" {% if config.flag_display.time_interval == 240 %}selected{% endif %}>4 hours</option>
+                            <option value="360" {% if config.flag_display.time_interval == 360 %}selected{% endif %}>6 hours</option>
+                            <option value="720" {% if config.flag_display.time_interval == 720 %}selected{% endif %}>12 hours</option>
+                            <option value="1440" {% if config.flag_display.time_interval == 1440 %}selected{% endif %}>24 hours</option>
+                        </select>
+                    </div>
+                    <div class="time-inputs">
+                        <label>Starting at:</label>
+                        <select id="start_hour" name="start_hour">
+                            {% for hour in range(0, 24) %}
+                            <option value="{{ hour }}" {% if config.flag_display.start_hour == hour %}selected{% endif %}>{{ '%02d' % hour }}</option>
+                            {% endfor %}
+                        </select>
+                        :
+                        <select id="start_minute" name="start_minute">
+                            {% for minute in [0, 15, 30, 45] %}
+                            <option value="{{ minute }}" {% if config.flag_display.start_minute == minute %}selected{% endif %}>{{ '%02d' % minute }}</option>
+                            {% endfor %}
+                        </select>
+                        <p class="help-text">
+                            For example, setting "Update every: 30 minutes" with "Starting at: 13:00" will update at 13:00, 13:30, 14:00, etc.
+                        </p>
+                    </div>
+                </div>
             </div>
+            
             <div class="form-group">
                 <label class="checkbox-label">
                     <input type="checkbox" name="update_at_startup" {% if config.flag_display.update_at_startup %}checked{% endif %}>
