@@ -12,59 +12,62 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Import configuration and display lock first
+# Import configuration
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config_manager import load_config
 
-# Import display lock
-try:
-    from display_lock import DisplayLock
-except Exception as e:
-    logger.error(f"Failed to import DisplayLock: {e}")
-    sys.exit(1)
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Try to import main with display_flag function
+# Try to import main with required functions
 try:
     # Only import display_flag function to avoid triggering GPIO initialization
-    from main import display_flag, update_flag_metadata, get_country_by_name, get_country_data, get_flag
-    EPD_AVAILABLE = True
+    from main import update_flag_metadata, get_country_by_name, get_country_data, get_flag
+    FLAG_FUNCTIONS_AVAILABLE = True
 except Exception as e:
-    logger.error(f"Error importing flag display modules: {e}")
-    EPD_AVAILABLE = False
+    logger.error(f"Error importing flag functions: {e}")
+    FLAG_FUNCTIONS_AVAILABLE = False
 
-# Try to import waveshare module separately
+# Import display manager
 try:
-    from waveshare_epd import epd7in3f
-    EPD_MODULE_AVAILABLE = True
+    from display import get_display_manager, DISPLAY_AVAILABLE
 except Exception as e:
-    logger.error(f"Error importing waveshare module: {e}")
-    EPD_MODULE_AVAILABLE = False
+    logger.error(f"Error importing display module: {e}")
+    DISPLAY_AVAILABLE = False
 
 def update_flag_safely(country_name=None, force_cleanup=False):
-    """Update flag with proper display lock handling"""
+    """
+    Update flag with proper display handling.
+    
+    Args:
+        country_name (str, optional): The name of the country whose flag to display.
+                                     If None, a random country is chosen.
+        force_cleanup (bool, optional): Whether to force clean up any stale locks.
+        
+    Returns:
+        int: 0 for success, non-zero for error.
+    """
+    # Load configuration
     config = load_config()
-    headless_mode = config.get('flag_display', {}).get('headless', False)
+    display_config = config.get('flag_display', {})
     
-    # If force cleanup is enabled, try to remove any existing lock file
-    if force_cleanup:
-        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        lock_file = os.path.join(base_dir, ".display.lock")
-        if os.path.exists(lock_file):
-            try:
-                os.remove(lock_file)
-                logger.warning(f"Force removed lock file: {lock_file}")
-            except Exception as e:
-                logger.error(f"Failed to force remove lock file: {e}")
+    # Get display manager with current config
+    display_manager = get_display_manager(display_config)
     
-    # If we can't import the required modules, run in headless mode
-    if not EPD_AVAILABLE:
-        logger.warning("Running in headless mode - required modules not available")
-        headless_mode = True
+    # If flag functions aren't available, we can't update anything
+    if not FLAG_FUNCTIONS_AVAILABLE:
+        logger.error("Required flag functions not available")
+        return 1
     
     # Get country data
     try:
+        # Load country data
         data = get_country_data()
+        
+        # Get specified country or random country
         country = get_country_by_name(data, country_name) if country_name else None
+        
+        # If specified country not found or none specified, choose random country
         if country_name and not country:
             logger.warning(f"Country '{country_name}' not recognized, using random country instead")
             import random
@@ -82,50 +85,26 @@ def update_flag_safely(country_name=None, force_cleanup=False):
         update_flag_metadata(country)
         logger.info(f"Updated metadata for {country['name']['common']}")
         
-        # If in headless mode, just return after updating metadata
-        if headless_mode or not EPD_MODULE_AVAILABLE:
-            logger.info("Running in headless mode - not updating physical display")
+        # If display is not available, just return success after updating metadata
+        if not DISPLAY_AVAILABLE or not display_manager.is_display_available():
+            logger.info("Physical display not available - metadata updated only")
             return 0
     except Exception as e:
         logger.error(f"Error preparing flag data: {e}")
         logger.debug(traceback.format_exc())
         return 1
-        
-    # Try to update the physical display with proper locking
+    
+    # Try to update the physical display
     try:
-        # First try to acquire the display lock
-        with DisplayLock(timeout=40) as lock:
-            if not lock.acquired:
-                logger.warning("Could not acquire display lock, skipping physical display update")
-                return 0
-                
-            try:
-                # Wait a moment before initializing display (helps prevent GPIO conflicts)
-                time.sleep(0.5)
-                
-                # Initialize the display
-                epd = epd7in3f.EPD()
-                logger.info("Display initialized successfully")
-                epd.init()
-                
-                # Resize image to display dimensions
-                display_width = config.get('display', {}).get('width', epd.width)
-                display_height = config.get('display', {}).get('height', epd.height)
-                from PIL import Image
-                resized = flag_img.resize((display_width, display_height), Image.Resampling.LANCZOS)
-                
-                # Display the flag
-                epd.display(epd.getbuffer(resized))
-                logger.info(f"Displayed flag for {country['name']['common']}")
-                
-                # Sleep the display
-                epd.sleep()
-                logger.info("Display update completed successfully")
-                return 0
-            except Exception as e:
-                logger.error(f"Display error: {e}")
-                logger.debug(traceback.format_exc())
-                return 1
+        # Display the flag image
+        success = display_manager.display_image(flag_img)
+        
+        if success:
+            logger.info(f"Displayed flag for {country['name']['common']}")
+            return 0
+        else:
+            logger.warning("Flag metadata updated but physical display update failed")
+            return 0  # Still return success since metadata was updated
     except Exception as e:
         logger.error(f"Error updating flag: {e}")
         logger.debug(traceback.format_exc())

@@ -1,5 +1,7 @@
-#!/usr/bin/python
-# -*- coding:utf-8 -*-
+"""
+Display lock implementation to prevent concurrent access to physical display hardware.
+Uses file-based locking to ensure multiple processes don't interfere with each other.
+"""
 
 import os
 import time
@@ -16,8 +18,14 @@ class DisplayLock:
     This prevents GPIO conflicts when multiple processes attempt to update the display simultaneously.
     """
     
-    def __init__(self, lock_file=None, timeout=40):
-        """Initialize the display lock with the specified lock file and timeout."""
+    def __init__(self, lock_file=None, timeout=20):
+        """
+        Initialize the display lock with the specified lock file and timeout.
+        
+        Args:
+            lock_file (str, optional): Path to the lock file. Defaults to None (uses default path).
+            timeout (int, optional): Maximum time to wait for lock acquisition in seconds. Defaults to 20.
+        """
         # Base directory of this project (~/Flags)
         base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         self.lock_file = lock_file or os.path.join(base_dir, ".display.lock")
@@ -29,7 +37,7 @@ class DisplayLock:
         self._check_stale_lock()
     
     def _check_stale_lock(self):
-        """Check if the lock file exists but is stale (old)"""
+        """Check if the lock file exists but is stale (old) and remove it if needed."""
         try:
             # If the lock file exists, check its age
             if os.path.exists(self.lock_file):
@@ -48,7 +56,13 @@ class DisplayLock:
     def acquire(self, timeout=None):
         """
         Acquire the display lock with a timeout.
-        Returns True if the lock was acquired, False otherwise.
+        
+        Args:
+            timeout (int, optional): Custom timeout for this acquisition attempt. 
+                                     Defaults to None (uses instance timeout).
+                                     
+        Returns:
+            bool: True if the lock was acquired, False otherwise.
         """
         if self.acquired:
             return True
@@ -106,7 +120,12 @@ class DisplayLock:
                 self._cleanup()
     
     def _cleanup(self, remove_file=True):
-        """Clean up file descriptor resources."""
+        """
+        Clean up file descriptor resources.
+        
+        Args:
+            remove_file (bool, optional): Whether to remove the lock file. Defaults to True.
+        """
         if self.fd:
             try:
                 self.fd.close()
@@ -124,12 +143,12 @@ class DisplayLock:
                     logger.debug(f"Could not remove lock file: {e}")
     
     def __enter__(self):
-        """Context manager entry."""
+        """Context manager entry point."""
         self.acquire()
         return self
     
     def __exit__(self, exc_type, exc_value, traceback):
-        """Context manager exit."""
+        """Context manager exit point."""
         self.release()
 
 
@@ -137,6 +156,12 @@ def with_display_lock(func):
     """
     Decorator to ensure a function is executed with the display lock.
     If the lock cannot be acquired, the function will not be executed.
+    
+    Args:
+        func: The function to wrap with display lock acquisition.
+        
+    Returns:
+        wrapper: The wrapped function that acquires a lock before execution.
     """
     def wrapper(*args, **kwargs):
         with DisplayLock() as lock:

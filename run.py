@@ -1,47 +1,41 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
+# -*- coding: utf-8 -*-
 
 import os
 import sys
+import json
 import logging
+import datetime
+import time
 from apscheduler.schedulers.background import BackgroundScheduler
-
-# Add scripts directory to path so we can import from it
-current_dir = os.path.dirname(os.path.abspath(__file__))
-scripts_dir = os.path.join(current_dir, "scripts")
-sys.path.append(scripts_dir)
-
-# Import the prepare_country_data function
-from prepare_country_data import prepare_country_data
-from app import create_app
-# Import configuration manager
-from scripts.config_manager import load_config, get_flag_display_settings
-# Import the display lock
-from scripts.display_lock import DisplayLock
+from apscheduler.triggers.interval import IntervalTrigger
+from flask import Flask
 
 # Configure logging
-logging.basicConfig(level=logging.INFO, 
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO,
+                   format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Create the Flask application
-app = create_app()
+# Add the current directory to the path for imports
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# Load configuration
-config = load_config()
-flag_settings = get_flag_display_settings()
+# Import required modules
+from app import create_app
+from scripts.config_manager import load_config
+from scripts.country_manager import prepare_country_data
+from scripts.update_flag import update_flag_safely
 
-# Try to import the display module, but handle the case when it's not available
+# Import display manager
 try:
-    # Import the flag display functionality
-    from scripts.main import display_flag, epd7in3f
-    EPD_AVAILABLE = True
-    logger.info("E-paper display module loaded successfully")
-except (ImportError, RuntimeError, ModuleNotFoundError) as e:
-    logger.warning(f"E-paper display module not available: {e}")
-    EPD_AVAILABLE = False
-    # Import just the display_flag function (which will work in headless mode)
-    from scripts.main import display_flag
+    from display import get_display_manager, DISPLAY_AVAILABLE
+except ImportError as e:
+    logger.warning(f"Display module not available: {e}")
+    DISPLAY_AVAILABLE = False
+
+def get_flag_display_settings():
+    """Load flag display settings from config."""
+    config = load_config()
+    return config.get('flag_display', {})
 
 def update_flag_display():
     """Function to update the e-ink flag display"""
@@ -54,76 +48,83 @@ def update_flag_display():
     try:
         logger.info("Scheduled flag update starting...")
         
-        # Check if we should run in headless mode
-        headless_mode = settings.get('headless', False)
-        
-        if headless_mode or not EPD_AVAILABLE:
-            logger.info("Running in headless mode (no physical display updates)")
-            # In headless mode, we just update the flag metadata
-            display_flag(None)
-        else:
-            # With physical display available, use a lock to prevent concurrent access
-            with DisplayLock() as lock:
-                if not lock.acquired:
-                    logger.warning("Could not acquire display lock, running in headless mode")
-                    display_flag(None)
-                    return
-                    
-                try:
-                    epd = epd7in3f.EPD()
-                    epd.init()
-                    display_flag(epd)
-                    epd.sleep()
-                except Exception as e:
-                    logger.error(f"Display hardware error: {e}")
-                    # Fall back to headless mode if hardware access fails
-                    logger.info("Falling back to headless mode")
-                    display_flag(None)
+        # Update the flag without specifying a country (will use random)
+        success = update_flag_safely(None)
         
         logger.info("Scheduled flag update completed")
     except Exception as e:
         logger.error(f"Error updating flag display: {e}", exc_info=True)
 
-# Initialize the scheduler
-scheduler = BackgroundScheduler()
+def setup_scheduler(app):
+    """Set up the background scheduler for periodic tasks."""
+    scheduler = BackgroundScheduler()
+    
+    # Load display settings
+    settings = get_flag_display_settings()
+    
+    # Add flag update job if enabled
+    if settings.get('enabled', True):
+        update_interval = int(settings.get('update_interval', 30))
+        logger.info(f"Flag display updates enabled - will update every {update_interval} minutes")
+        
+        scheduler.add_job(
+            func=update_flag_display,
+            trigger=IntervalTrigger(minutes=update_interval),
+            id='flag_update_job',
+            name='Update flag display',
+            replace_existing=True)
+    else:
+        logger.info("Flag display updates are disabled")
 
-if __name__ == "__main__":
-    # Prepare country data at startup
+    # Start the scheduler
+    scheduler.start()
+    
+    # Explicitly check if we should run an immediate update
+    if settings.get('enabled', True) and settings.get('update_on_start', True):
+        time.sleep(1)  # Short delay to ensure app has started
+        scheduler.add_job(
+            func=update_flag_display,
+            trigger='date',
+            run_date=datetime.datetime.now() + datetime.timedelta(seconds=2),
+            id='initial_flag_update')
+    
+    # Shut down the scheduler when the app terminates
+    atexit.register(lambda: scheduler.shutdown())
+
+if __name__ == '__main__':
+    import atexit
+    
+    # Prepare country data
     print("Preparing country data...")
-    if prepare_country_data():
-        print("Country data prepared successfully!")
-    else:
-        print("Warning: Failed to prepare country data")
+    prepare_country_data()
+    print("Country data prepared successfully!")
     
-    # Set up the scheduler based on configuration
-    update_interval = flag_settings.get('update_interval_minutes', 30)
+    # Initialize display manager with config
+    config = load_config()
+    display_config = config.get('flag_display', {})
     
-    if flag_settings.get('enabled', True):
-        # Add scheduled job with interval from config
-        scheduler.add_job(update_flag_display, 'interval', minutes=update_interval)
-        
-        # Also update the flag display at startup if configured
-        if flag_settings.get('update_at_startup', True):
-            scheduler.add_job(update_flag_display)
-            
-        # Start the scheduler
-        scheduler.start()
-        
-        # Log whether we're in headless mode
-        if flag_settings.get('headless', False) or not EPD_AVAILABLE:
-            print(f"Flag display running in HEADLESS mode - updates scheduled every {update_interval} minutes")
+    if DISPLAY_AVAILABLE:
+        display_manager = get_display_manager(display_config)
+        if display_manager.is_display_available():
+            print("E-Paper display initialized successfully")
         else:
-            print(f"Flag display updates enabled - will update every {update_interval} minutes")
+            print("Running in headless mode - physical display not available")
     else:
-        print("Flag display updates are disabled in config")
+        print("Display module not available - running in headless mode")
     
-    print(f"Starting server at http://0.0.0.0:5000/")
-    print(f"Access locally via http://smartpi.local:5000/")
+    # Create and configure the Flask app
+    app = create_app()
+    
+    # Set up the scheduler
+    setup_scheduler(app)
+    
+    # Get server configuration
+    host = config.get('server', {}).get('host', '0.0.0.0')
+    port = config.get('server', {}).get('port', 5000)
+    
+    # Start the server
+    print(f"Starting server at http://{host}:{port}/")
+    if host == '0.0.0.0':
+        print("Access locally via http://smartpi.local:5000/")
     print("CTRL+C to stop the server")
-    
-    try:
-        # Start Flask without HTTPS
-        app.run(host="0.0.0.0", port=5000)
-    except (KeyboardInterrupt, SystemExit):
-        # Ensure clean shutdown of scheduler when app terminates
-        scheduler.shutdown()
+    app.run(host=host, port=port)
