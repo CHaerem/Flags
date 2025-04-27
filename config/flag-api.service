@@ -6,7 +6,7 @@ Wants=network-online.target
 [Service]
 User=chris
 WorkingDirectory=/home/chris/Flags
-ExecStart=/home/chris/Flags/venv/bin/python /home/chris/Flags/run.py
+ExecStart=/usr/bin/python3 /home/chris/Flags/run.py
 Restart=on-failure
 RestartSec=10
 
