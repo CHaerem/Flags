@@ -18,7 +18,7 @@
     "height": 480
   },
   "server": {
-    "port": 8080
+    "port": 80
   },
   "current_flag": {
     "country": "Brunei",
