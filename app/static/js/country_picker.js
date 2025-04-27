@@ -71,8 +71,10 @@ let CountryPicker = (function () {
     if (query) {
       matches = countryList.filter(c => c.name.toLowerCase().includes(query) || c.region.toLowerCase().includes(query));
     }
+    // Use grid layout for flag selection
+    listContainer.classList.add('grid');
     listContainer.innerHTML = matches.map(c => `
-      <div class="picker-item" tabindex="0" data-name="${c.name}">
+      <div class="picker-item grid" tabindex="0" data-name="${c.name}">
         <span class="picker-emoji">${c.emoji}</span>
         <span class="picker-name">${c.name}</span>
         <span class="picker-region">${c.region}</span>
