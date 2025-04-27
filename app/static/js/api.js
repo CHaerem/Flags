@@ -95,9 +95,7 @@ const FlagAPI = (function () {
 	 * @returns {Promise<string>} Response message
 	 */
 	async function changeFlag(countryName) {
-		const flaskApiUrl = `/change-flag?country=${encodeURIComponent(
-			countryName
-		)}`;
+		const flaskApiUrl = `/change-flag`;
 
 		try {
 			const response = await fetch(flaskApiUrl, {
@@ -105,6 +103,7 @@ const FlagAPI = (function () {
 				headers: {
 					"Content-Type": "application/json",
 				},
+				body: JSON.stringify({ country: countryName }),
 			});
 
 			const responseText = await response.text();
