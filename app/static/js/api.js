@@ -123,6 +123,7 @@ const FlagAPI = (function () {
 		fetchLocalFlagData,
 		fetchCountryData,
 		changeFlag,
+		loadAllCountryData,
 	};
 })();
 
