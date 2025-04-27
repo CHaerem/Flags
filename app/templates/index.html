@@ -34,6 +34,9 @@
 		<div class="nav-menu">
 			<a href="/">Home</a>
 			<a href="/config">Configuration</a>
+			{% if is_mock_display %}
+			<a href="/preview">Display Preview</a>
+			{% endif %}
 		</div>
 
 		<div class="container">

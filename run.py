@@ -7,6 +7,7 @@ import json
 import logging
 import datetime
 import time
+import argparse
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
@@ -32,6 +33,14 @@ try:
 except ImportError as e:
     logger.warning(f"Display module not available: {e}")
     DISPLAY_AVAILABLE = False
+
+# Parse command-line arguments
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Flag Display Web Application')
+    parser.add_argument('--mock', action='store_true', help='Enable mock display mode for development')
+    parser.add_argument('--headless', action='store_true', help='Run in headless mode (no display updates)')
+    parser.add_argument('--port', type=int, default=None, help='Port to run the server on (overrides config)')
+    return parser.parse_args()
 
 def get_flag_display_settings():
     """Load flag display settings from config."""
@@ -149,6 +158,9 @@ def setup_scheduler(app):
 if __name__ == '__main__':
     import atexit
     
+    # Parse command-line arguments
+    args = parse_arguments()
+    
     # Prepare country data
     print("Preparing country data...")
     prepare_country_data()
@@ -158,10 +170,25 @@ if __name__ == '__main__':
     config = load_config()
     display_config = config.get('flag_display', {})
     
+    # Override config with command-line arguments
+    if args.mock:
+        print("Mock display mode enabled via command-line argument")
+        display_config['use_mock'] = True
+    else:
+        # Ensure mock is disabled by default if not specified in command line
+        display_config['use_mock'] = False
+    
+    if args.headless:
+        print("Headless mode enabled via command-line argument")
+        display_config['headless'] = True
+    
     if DISPLAY_AVAILABLE:
         display_manager = get_display_manager(display_config)
         if display_manager.is_display_available():
-            print("E-Paper display initialized successfully")
+            if display_manager.is_mock_display():
+                print("Mock display initialized for development")
+            else:
+                print("E-Paper display initialized successfully")
         else:
             print("Running in headless mode - physical display not available")
     else:
@@ -175,11 +202,11 @@ if __name__ == '__main__':
     
     # Get server configuration
     host = config.get('server', {}).get('host', '0.0.0.0')
-    port = config.get('server', {}).get('port', 5000)
+    port = args.port if args.port is not None else config.get('server', {}).get('port', 5001)
     
     # Start the server
     print(f"Starting server at http://{host}:{port}/")
     if host == '0.0.0.0':
-        print("Access locally via http://smartpi.local:5000/")
+        print(f"Access locally via http://localhost:{port}/")
     print("CTRL+C to stop the server")
     app.run(host=host, port=port)

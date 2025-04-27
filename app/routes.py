@@ -1,7 +1,8 @@
 import os
 import json
 import logging
-from flask import Blueprint, request, jsonify, render_template, send_from_directory
+import datetime
+from flask import Blueprint, request, jsonify, render_template, send_from_directory, redirect, url_for
 import sys
 
 # Create a Blueprint instance
@@ -16,6 +17,14 @@ try:
 except Exception as e:
     print(f"Error importing update_flag: {e}")
 
+# Try to import display manager for preview functionality
+try:
+    from display import get_display_manager
+    DISPLAY_MODULE_AVAILABLE = True
+except ImportError:
+    DISPLAY_MODULE_AVAILABLE = False
+    print("Display module not available for preview")
+
 @main.route('/')
 def index():
     return render_template('index.html')
@@ -23,6 +32,31 @@ def index():
 @main.route('/static/<path:path>')
 def send_static(path):
     return send_from_directory('static', path)
+
+@main.route('/preview')
+def preview():
+    """Display preview page for the e-paper display"""
+    # Import config_manager to load the current configuration
+    sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'scripts'))
+    from config_manager import load_config
+    
+    config = load_config()
+    display_image = None
+    
+    # Try to get the current display image from the mock display
+    use_mock = False
+    if DISPLAY_MODULE_AVAILABLE:
+        display_manager = get_display_manager()
+        if display_manager.is_mock_display():
+            use_mock = True
+            display_image = display_manager.get_mock_display_image()
+    
+    last_updated = config.get('current_flag', {}).get('timestamp', None)
+    
+    return render_template('preview.html', 
+                          display_image=display_image, 
+                          use_mock=use_mock,
+                          last_updated=last_updated)
 
 @main.route('/change-flag', methods=['POST'])
 def change_flag():
@@ -101,6 +135,14 @@ def save_config():
     # Save the configuration
     save_config(config)
     
+    # Update display manager configuration if available
+    if DISPLAY_MODULE_AVAILABLE:
+        try:
+            display_manager = get_display_manager(config.get('flag_display', {}))
+            # The display manager will reinitialize with the new configuration
+        except Exception as e:
+            logging.error(f"Error updating display manager: {e}")
+    
     # Reload the configuration to ensure it was saved correctly
     config = load_config()
     
@@ -113,6 +155,21 @@ def update_flag_now():
     try:
         # Force cleanup the lock file if there were recent timeouts and use random country
         success = update_flag_safely(None, force_cleanup=True)
+        
+        # If request wants JSON response, return JSON
+        if request.is_json or request.headers.get('Accept') == 'application/json':
+            if success == 0:
+                return jsonify({'status': 'success', 'message': 'Flag updated successfully!'}), 200
+            else:
+                return jsonify({
+                    'status': 'partial_success', 
+                    'message': 'Flag metadata updated, but physical display may not have updated.'
+                }), 202
+        
+        # For normal form submissions, redirect to preview page if it exists
+        referer = request.headers.get('Referer', '')
+        if 'preview' in referer:
+            return redirect(url_for('main.preview'))
         
         # Import config_manager to load the current configuration
         sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'scripts'))
@@ -128,6 +185,11 @@ def update_flag_now():
             
     except Exception as e:
         logging.error(f"Error updating flag: {str(e)}", exc_info=True)
+        
+        # If request wants JSON response, return JSON
+        if request.is_json or request.headers.get('Accept') == 'application/json':
+            return jsonify({'status': 'error', 'message': str(e)}), 500
+            
         # Import config_manager to load the current configuration
         sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), 'scripts'))
         from config_manager import load_config

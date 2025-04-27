@@ -156,12 +156,57 @@
         .time-inputs select, .time-inputs input {
             width: auto;
         }
+        
+        /* Preview styles */
+        .display-preview {
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+        .display-preview-heading {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .display-preview img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 10px auto;
+            border: 1px solid #ddd;
+            box-shadow: 0px 0px 5px rgba(0,0,0,0.1);
+        }
+        .refresh-preview {
+            background-color: #5cb85c;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .refresh-preview:hover {
+            background-color: #4cae4c;
+        }
+        .development-mode-notice {
+            background-color: #d9edf7;
+            color: #31708f;
+            border: 1px solid #bce8f1;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="nav">
         <a href="/">Home</a>
         <a href="/config">Configuration</a>
+        {% if is_mock_display %}
+        <a href="/preview">Display Preview</a>
+        {% endif %}
     </div>
 
     <h1>Flag Display Configuration</h1>
