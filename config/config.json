@@ -5,7 +5,7 @@
     "update_at_startup": true,
     "mode": "random",
     "fixed_country": "",
-    "last_updated": "2025-04-27 19:02:32",
+    "last_updated": "2025-04-27 19:49:52",
     "headless": false,
     "use_mock": true,
     "use_fixed_times": true,
@@ -17,26 +17,32 @@
     "width": 800,
     "height": 480
   },
+  "server": {
+    "port": 8080
+  },
   "current_flag": {
-    "country": "Kenya",
-    "info": "Capital: Nairobi",
-    "emoji": "\ud83c\uddf0\ud83c\uddea",
-    "timestamp": "2025-04-27 19:02:32",
-    "population": 53771300,
-    "region": "Africa",
-    "subregion": "Eastern Africa",
+    "country": "Brunei",
+    "info": "Capital: Bandar Seri Begawan",
+    "emoji": "\ud83c\udde7\ud83c\uddf3",
+    "timestamp": "2025-04-27 19:49:52",
+    "population": 437483,
+    "region": "Asia",
+    "subregion": "South-Eastern Asia",
     "languages": {
-      "eng": "English",
-      "swa": "Swahili"
+      "msa": "Malay"
     },
     "currencies": {
-      "KES": {
-        "symbol": "Sh",
-        "name": "Kenyan shilling"
+      "BND": {
+        "symbol": "$",
+        "name": "Brunei dollar"
+      },
+      "SGD": {
+        "symbol": "$",
+        "name": "Singapore dollar"
       }
     },
     "timezones": [
-      "UTC+03:00"
+      "UTC+08:00"
     ]
   }
 }
