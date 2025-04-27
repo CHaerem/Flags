@@ -6,6 +6,7 @@ import time
 import fcntl
 import errno
 import logging
+import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,26 @@ class DisplayLock:
         self.timeout = timeout
         self.fd = None
         self.acquired = False
+        
+        # Check for stale locks at initialization
+        self._check_stale_lock()
+    
+    def _check_stale_lock(self):
+        """Check if the lock file exists but is stale (old)"""
+        try:
+            # If the lock file exists, check its age
+            if os.path.exists(self.lock_file):
+                file_age = time.time() - os.path.getmtime(self.lock_file)
+                # If the file is older than 2 minutes, it's likely a stale lock
+                if file_age > 120:  # 2 minutes in seconds
+                    logger.warning(f"Found stale lock file (age: {file_age:.1f}s), removing it")
+                    try:
+                        os.remove(self.lock_file)
+                        logger.info("Stale lock file removed")
+                    except Exception as e:
+                        logger.error(f"Failed to remove stale lock file: {e}")
+        except Exception as e:
+            logger.error(f"Error checking stale lock: {e}")
     
     def acquire(self, timeout=None):
         """
@@ -38,6 +59,9 @@ class DisplayLock:
         try:
             # Create the lock file if it doesn't exist
             self.fd = open(self.lock_file, 'w+')
+            # Write current timestamp and process info to the lock file for debugging
+            self.fd.write(f"Lock acquired by PID {os.getpid()} at {datetime.datetime.now().isoformat()}\n")
+            self.fd.flush()
             
             while True:
                 try:
@@ -84,6 +108,14 @@ class DisplayLock:
             except:
                 pass
             self.fd = None
+            
+            # Try to remove the lock file when we're done
+            try:
+                if os.path.exists(self.lock_file):
+                    os.remove(self.lock_file)
+                    logger.debug(f"Lock file removed: {self.lock_file}")
+            except Exception as e:
+                logger.debug(f"Could not remove lock file: {e}")
     
     def __enter__(self):
         """Context manager entry."""
