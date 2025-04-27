@@ -13,10 +13,11 @@ from io import BytesIO
 
 import requests
 from PIL import Image
-from waveshare_epd import epd7in3f
 
 # Import the config manager
 from config_manager import load_config, update_current_flag, get_flag_display_settings
+# Import the display lock
+from display_lock import DisplayLock
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -27,6 +28,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CACHE_FILE     = os.path.join(BASE_DIR, "app", "static", "data", "countries.json")
 FLAG_CACHE_DIR = os.path.join(BASE_DIR, "flag_cache")
 FLAG_INFO_PATH = os.path.join(BASE_DIR, "app", "static", "data", "flag.json")
+
+# Try to import e-paper display library, but handle case when not available
+try:
+    from waveshare_epd import epd7in3f
+    EPD_AVAILABLE = True
+except (ImportError, RuntimeError, ModuleNotFoundError) as e:
+    logging.warning(f"E-paper display module not available: {e}")
+    EPD_AVAILABLE = False
 
 
 def load_cache():
@@ -186,12 +195,13 @@ def update_flag_metadata(country):
     
     logging.info(f"Updated flag metadata for {country['name']['common']}")
 
-def display_flag(epd, country_name=None):
+def display_flag(epd=None, country_name=None):
     logging.info("Displaying flag...")
     
     # Load configuration
     config = load_config()
     settings = config.get('flag_display', {})
+    headless_mode = settings.get('headless', False)
 
     # Get country data
     data = get_country_data()
@@ -219,34 +229,81 @@ def display_flag(epd, country_name=None):
     # Update metadata
     update_flag_metadata(country)
     
-    # Adjust display size based on config if available
-    display_width = config.get('display', {}).get('width', epd.width)
-    display_height = config.get('display', {}).get('height', epd.height)
+    # If we're in headless mode or e-paper display is not available, we just update the metadata
+    if headless_mode or not EPD_AVAILABLE or epd is None:
+        logging.info(f"Running in headless mode - metadata updated for {country['name']['common']}")
+        return country
     
-    # Display the flag on the e-paper display
-    resized = img.resize((display_width, display_height), Image.Resampling.LANCZOS)
-    epd.display(epd.getbuffer(resized))
-    logging.info(f"Displayed flag for {country['name']['common'] if 'name' in country and 'common' in country['name'] else 'Unknown'}")
+    # If we reach here, we have a valid epd instance and should update the physical display
+    # Use a display lock to prevent concurrent access to GPIO pins
+    with DisplayLock() as lock:
+        if not lock.acquired:
+            logging.warning("Could not acquire display lock, skipping physical display update")
+            return country
+            
+        try:
+            # Adjust display size based on config if available
+            display_width = config.get('display', {}).get('width', epd.width)
+            display_height = config.get('display', {}).get('height', epd.height)
+            
+            # Display the flag on the e-paper display
+            resized = img.resize((display_width, display_height), Image.Resampling.LANCZOS)
+            epd.display(epd.getbuffer(resized))
+            logging.info(f"Displayed flag for {country['name']['common']}")
+            
+            # Put the display to sleep
+            epd.sleep()
+        except Exception as e:
+            logging.error(f"Error updating display: {e}")
+            traceback.print_exc()
+            # Even if display fails, we've at least updated the metadata
+    
+    return country
 
 if __name__ == "__main__":
     try:
         country_arg = sys.argv[1] if len(sys.argv) > 1 else None
 
-        epd = epd7in3f.EPD()
-        logging.info("Initializing display")
-        epd.init()
-        epd.Clear()
+        # Check if we should run in headless mode (either from config or command line)
+        config = load_config()
+        headless = config.get('flag_display', {}).get('headless', False)
+        if "--headless" in sys.argv:
+            headless = True
 
-        display_flag(epd, country_arg)
+        if headless or not EPD_AVAILABLE:
+            # Headless mode - just update metadata
+            logging.info("Running in headless mode")
+            display_flag(None, country_arg)
+        else:
+            # Normal mode with e-paper display
+            # Use a display lock to prevent concurrent access to GPIO pins
+            with DisplayLock() as lock:
+                if not lock.acquired:
+                    logging.warning("Could not acquire display lock, running in headless mode")
+                    display_flag(None, country_arg)
+                    sys.exit(0)
+                    
+                try:
+                    epd = epd7in3f.EPD()
+                    logging.info("Initializing display")
+                    epd.init()
+                    epd.Clear()
 
-        logging.info("Sleeping display")
-        epd.sleep()
-
+                    display_flag(epd, country_arg)
+                    
+                    logging.info("Sleeping display")
+                    epd.sleep()
+                except Exception as e:
+                    logging.error(f"Display error: {e}")
+                    # If the display fails, fall back to headless mode
+                    display_flag(None, country_arg)
+                
     except Exception as e:
         logging.error("Error: %s", e)
         traceback.print_exc()
         try:
-            epd7in3f.epdconfig.module_exit()
+            if 'epd' in locals() and epd and EPD_AVAILABLE:
+                epd7in3f.epdconfig.module_exit()
         except:
             pass
         sys.exit(1)

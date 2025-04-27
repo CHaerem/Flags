@@ -34,6 +34,7 @@ def config():
             # Update flag display settings
             flag_settings = {
                 'enabled': 'enabled' in request.form,
+                'headless': 'headless' in request.form,  # Add headless mode option
                 'update_interval_minutes': int(request.form.get('update_interval', 30)),
                 'update_at_startup': 'update_at_startup' in request.form,
                 'mode': request.form.get('display_mode', 'random'),
@@ -50,7 +51,7 @@ def config():
             config['flag_display'] = flag_settings
             save_config(config)
             
-            message = "Configuration saved successfully!"
+            message = "Configuration saved successfully! Restart the service for changes to take effect."
             success = True
             
             # Reload the configuration to get the updated values

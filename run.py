@@ -14,10 +14,10 @@ sys.path.append(scripts_dir)
 # Import the prepare_country_data function
 from prepare_country_data import prepare_country_data
 from app import create_app
-# Import the flag display functionality
-from scripts.main import display_flag, epd7in3f
 # Import configuration manager
-from scripts.config_manager import load_config, get_flag_display_settings, update_flag_display_settings
+from scripts.config_manager import load_config, get_flag_display_settings
+# Import the display lock
+from scripts.display_lock import DisplayLock
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, 
@@ -31,6 +31,18 @@ app = create_app()
 config = load_config()
 flag_settings = get_flag_display_settings()
 
+# Try to import the display module, but handle the case when it's not available
+try:
+    # Import the flag display functionality
+    from scripts.main import display_flag, epd7in3f
+    EPD_AVAILABLE = True
+    logger.info("E-paper display module loaded successfully")
+except (ImportError, RuntimeError, ModuleNotFoundError) as e:
+    logger.warning(f"E-paper display module not available: {e}")
+    EPD_AVAILABLE = False
+    # Import just the display_flag function (which will work in headless mode)
+    from scripts.main import display_flag
+
 def update_flag_display():
     """Function to update the e-ink flag display"""
     # Check if flag display is enabled in config
@@ -41,11 +53,34 @@ def update_flag_display():
 
     try:
         logger.info("Scheduled flag update starting...")
-        epd = epd7in3f.EPD()
-        epd.init()
-        display_flag(epd)
-        epd.sleep()
-        logger.info("Scheduled flag update completed successfully")
+        
+        # Check if we should run in headless mode
+        headless_mode = settings.get('headless', False)
+        
+        if headless_mode or not EPD_AVAILABLE:
+            logger.info("Running in headless mode (no physical display updates)")
+            # In headless mode, we just update the flag metadata
+            display_flag(None)
+        else:
+            # With physical display available, use a lock to prevent concurrent access
+            with DisplayLock() as lock:
+                if not lock.acquired:
+                    logger.warning("Could not acquire display lock, running in headless mode")
+                    display_flag(None)
+                    return
+                    
+                try:
+                    epd = epd7in3f.EPD()
+                    epd.init()
+                    display_flag(epd)
+                    epd.sleep()
+                except Exception as e:
+                    logger.error(f"Display hardware error: {e}")
+                    # Fall back to headless mode if hardware access fails
+                    logger.info("Falling back to headless mode")
+                    display_flag(None)
+        
+        logger.info("Scheduled flag update completed")
     except Exception as e:
         logger.error(f"Error updating flag display: {e}", exc_info=True)
 
@@ -73,7 +108,12 @@ if __name__ == "__main__":
             
         # Start the scheduler
         scheduler.start()
-        print(f"Flag display updates enabled - will update every {update_interval} minutes")
+        
+        # Log whether we're in headless mode
+        if flag_settings.get('headless', False) or not EPD_AVAILABLE:
+            print(f"Flag display running in HEADLESS mode - updates scheduled every {update_interval} minutes")
+        else:
+            print(f"Flag display updates enabled - will update every {update_interval} minutes")
     else:
         print("Flag display updates are disabled in config")
     

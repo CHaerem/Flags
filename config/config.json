@@ -5,7 +5,8 @@
     "update_at_startup": true,
     "mode": "random",
     "fixed_country": "",
-    "last_updated": ""
+    "last_updated": "",
+    "headless": false
   },
   "display": {
     "width": 800,
