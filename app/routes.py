@@ -58,6 +58,17 @@ def preview():
                           use_mock=use_mock,
                           last_updated=last_updated)
 
+@main.route('/current-flag', methods=['GET'])
+def current_flag():
+    """Return the currently displayed flag/country and its info."""
+    try:
+        with open(os.path.join(os.path.dirname(__file__), 'static/data/flag.json'), 'r', encoding='utf-8') as f:
+            flag_data = json.load(f)
+        return jsonify(flag_data)
+    except Exception as e:
+        logging.error(f"Error reading flag.json: {e}")
+        return jsonify({'status': 'error', 'message': 'Could not read current flag info.'}), 500
+
 @main.route('/change-flag', methods=['POST'])
 def change_flag():
     # Check for country in JSON body first, then form data, then query params

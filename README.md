@@ -81,6 +81,63 @@
 
 ---
 
+## 🏠 Google Home Integration via Home Assistant (Recommended)
+
+You can control your FlagPi with Google Home using [Home Assistant](https://www.home-assistant.io/), which acts as a local bridge between your smart home devices and your FlagPi API. This approach is easy to set up, works fully on your local network, and does not require a static IP or cloud exposure.
+
+### ⚡️ Steps to Integrate with Google Home using Home Assistant
+
+1. **Install Home Assistant**
+   - Recommended: Use [Home Assistant OS](https://www.home-assistant.io/installation/) on a Raspberry Pi or run it in Docker/venv on any always-on device.
+   - Complete the onboarding and access the Home Assistant web UI.
+
+2. **Add a RESTful Command for FlagPi**
+   - In `configuration.yaml` (or via the UI), add a RESTful command to change the flag:
+     ```yaml
+     rest_command:
+       set_flag:
+         url: "http://FlagPi.local:5000/change-flag"
+         method: POST
+         headers:
+           Content-Type: application/json
+         payload: '{"country": "{{ country }}"}'
+     ```
+
+3. **Create Scripts or Helpers for Each Country**
+   - In Home Assistant, create scripts for your favorite countries:
+     ```yaml
+     script:
+       set_flag_norway:
+         alias: "Set Flag to Norway"
+         sequence:
+           - service: rest_command.set_flag
+             data:
+               country: "Norway"
+     ```
+   - Or use [input_select](https://www.home-assistant.io/integrations/input_select/) and a script for dynamic selection.
+
+4. **Expose Scripts to Google Home**
+   - Enable the [Google Assistant integration](https://www.home-assistant.io/integrations/google_assistant/) in Home Assistant.
+   - Expose your scripts or helpers to Google Home by adding them to the `exposed_domains` or using the `entity_config`.
+   - Link Home Assistant to your Google Home app (one-time cloud step required for account linking; all commands are local afterward).
+
+5. **Control with Voice**
+   - Use Google Home voice commands like:
+     - "Hey Google, activate set flag to Norway"
+     - Or create routines for easier phrases (e.g., "change flag to Norway")
+
+### 📝 Resources
+- [Home Assistant RESTful Command Docs](https://www.home-assistant.io/integrations/rest_command/)
+- [Google Assistant Integration](https://www.home-assistant.io/integrations/google_assistant/)
+- [Home Assistant Scripts](https://www.home-assistant.io/docs/scripts/)
+- [input_select Helper](https://www.home-assistant.io/integrations/input_select/)
+
+> **Note:** This method is easy to expand with automations, dashboards, and works with hundreds of other smart devices. All control is local after initial setup.
+
+---
+
+---
+
 ## 📂 Project Structure
 
 ```
