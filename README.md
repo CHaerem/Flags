@@ -1,140 +1,83 @@
-# 🏳️  E-Ink Flag Display with Self-Hosted Flask Server
+# 🏳️ E-Ink Flag Display (Flask)
 
-## 🚀 Getting Started
+A modern, self-hosted Flask app to control a Waveshare E-Ink display (or web mock) showing the flag of any country. Supports Google Home voice control, IFTTT, and secure or local API access.
 
-1. **Clone the repo**
+---
 
+## 🚀 Quick Start
+
+1. **Clone & Install**
    ```bash
    git clone https://github.com/CHaerem/Flags.git
    cd Flags
-   ```
-
-2. **Install dependencies**
-
-   ```bash
-   # System packages
-   sudo apt update
-   sudo apt install python3-pip python3-venv python3-flask
-
-   # (Optional) Create and use a virtual environment:
+   sudo apt update && sudo apt install python3-pip python3-venv python3-flask
    python3 -m venv venv
    source venv/bin/activate
    pip install -r requirements.txt
    ```
-
-3. **Start the Flask server**
-
+2. **Run the Flask server**
    ```bash
-   # Run manually
    python3 run.py [--mock] [--headless] [--port PORT]
    ```
-   - `--mock`: Use mock display (web preview, no hardware required)
-   - `--headless`: Disable all display updates (metadata only)
-   - `--port`: Specify server port (default from config)
-
-4. **Run the display script directly**
-
+   - `--mock`: Web preview (no hardware)
+   - `--headless`: Metadata only (no display)
+3. **(Optional) Run display script directly**
    ```bash
    sudo python3 scripts/main.py [CountryName]
    ```
-   - If no country is specified, will use config or random
-
-5. **Auto-start on boot** (pick one):
-
-   - **Cron**:
-     ```bash
-     crontab -e
-     @reboot sleep 15 && /usr/bin/python3 /home/chris/Flags/run.py >> flask_api.log 2>&1
-     ```
-   - **systemd**:  
-     Create `/etc/systemd/system/flag-app.service` with:
-
-     ```
-     [Unit]
-     Description=Flag Display Flask App
-     After=network.target
-
-     [Service]
-     User=chris
-     WorkingDirectory=/home/chris/Flags
-     ExecStart=/usr/bin/python3 /home/chris/Flags/run.py
-     Restart=always
-
-     [Install]
-     WantedBy=multi-user.target
-     ```
+4. **Auto-start on boot**
+   - **Cron**: Add to `crontab -e`
+   - **systemd**: See example below
 
 ---
 
-## 🆕 Key Features
-
-- 📺 **E-Ink display** (Waveshare 7.3") or **Mock Display** (web preview)
-- 🌐 **Modern Flask web UI** with flag info, autocomplete, and map
-- 🖥️ **Configuration page**: Enable/disable updates, headless/mock modes, scheduling, display size
-- 🔁 **Flexible scheduling**: Time-based intervals, fixed update times, update at startup
-- 🔍 **Autocomplete** for country selection (with emoji, offline)
-- 🗺️ **World map**: Shows location of selected country
-- 🛠 **Manual/automatic flag update** via web or API
-- 🔄 **Offline/Online**: All core features work offline on local network
-- 🛡️ **Display lock**: Prevents hardware conflicts
-- 📱 **NFC tag** and 🗣️ **Google Home** integration (see below)
+## ✨ Features
+- **Real or Mock Display**: E-Ink hardware or browser preview
+- **Modern Web UI**: Flag info, autocomplete, map
+- **Configurable**: Enable/disable, mock/headless, schedule, display size
+- **Flexible Scheduling**: Time-based intervals, update at startup
+- **Offline/Online**: Works on your LAN or via Tailscale
+- **API & Voice Control**: Secure or local endpoints, Google Home/IFTTT
+- **Display Lock**: Prevents hardware conflicts
 
 ---
 
-## 🏠 Google Home Integration via Home Assistant (Recommended)
+## 🔒 API Endpoints (Summary)
+| Endpoint                | Access         | Auth Required     | Purpose                |
+|------------------------|---------------|-------------------|------------------------|
+| `/change-flag`         | Public (Funnel)| Yes (`X-Flag-Token`)| Change flag remotely   |
+| `/local-change-flag`   | Local only     | No                | Change flag locally    |
+| `/current-flag`        | Public/Local   | No                | Get current flag info  |
 
-You can control your FlagPi with Google Home using [Home Assistant](https://www.home-assistant.io/), which acts as a local bridge between your smart home devices and your FlagPi API. This approach is easy to set up, works fully on your local network, and does not require a static IP or cloud exposure.
+> **Only `/change-flag` is exposed via Tailscale Funnel for secure remote/IFTTT use. Local web UI/scripts use `/local-change-flag` (open on LAN). `/current-flag` is always open.**
 
-### ⚡️ Steps to Integrate with Google Home using Home Assistant
+     with header:
+     > X-Flag-Token: your-secret-token
 
-1. **Install Home Assistant**
-   - Recommended: Use [Home Assistant OS](https://www.home-assistant.io/installation/) on a Raspberry Pi or run it in Docker/venv on any always-on device.
-   - Complete the onboarding and access the Home Assistant web UI.
+5. **Local Access**
+   - For local scripts or web UI, use:
+     > http://FlagPi.local/local-change-flag
+   - No token required for local use.
 
-2. **Add a RESTful Command for FlagPi**
-   - In `configuration.yaml` (or via the UI), add a RESTful command to change the flag:
-     ```yaml
-     rest_command:
-       set_flag:
-         url: "http://FlagPi.local:5000/change-flag"
-         method: POST
-         headers:
-           Content-Type: application/json
-         payload: '{"country": "{{ country }}"}'
-     ```
+6. **Get Current Flag Info**
+   - Anyone (local or remote) can GET:
+     > http://FlagPi.local/current-flag
+     > https://flagpi.ts.net/current-flag
 
-3. **Create Scripts or Helpers for Each Country**
-   - In Home Assistant, create scripts for your favorite countries:
-     ```yaml
-     script:
-       set_flag_norway:
-         alias: "Set Flag to Norway"
-         sequence:
-           - service: rest_command.set_flag
-             data:
-               country: "Norway"
-     ```
-   - Or use [input_select](https://www.home-assistant.io/integrations/input_select/) and a script for dynamic selection.
-
-4. **Expose Scripts to Google Home**
-   - Enable the [Google Assistant integration](https://www.home-assistant.io/integrations/google_assistant/) in Home Assistant.
-   - Expose your scripts or helpers to Google Home by adding them to the `exposed_domains` or using the `entity_config`.
-   - Link Home Assistant to your Google Home app (one-time cloud step required for account linking; all commands are local afterward).
-
-5. **Control with Voice**
-   - Use Google Home voice commands like:
-     - "Hey Google, activate set flag to Norway"
-     - Or create routines for easier phrases (e.g., "change flag to Norway")
-
-### 📝 Resources
-- [Home Assistant RESTful Command Docs](https://www.home-assistant.io/integrations/rest_command/)
-- [Google Assistant Integration](https://www.home-assistant.io/integrations/google_assistant/)
-- [Home Assistant Scripts](https://www.home-assistant.io/docs/scripts/)
-- [input_select Helper](https://www.home-assistant.io/integrations/input_select/)
-
-> **Note:** This method is easy to expand with automations, dashboards, and works with hundreds of other smart devices. All control is local after initial setup.
+**✅ Result:**
+- Google Home speaks your command
+- IFTTT sends the flag update
+- Tailscale securely delivers it to your Pi (with token)
+- Flask accepts the request and updates the E-Ink flag display
 
 ---
+
+**Summary:**
+- **Remote/public updates**: `/change-flag` (secure, token required)
+- **Local updates**: `/local-change-flag` (open)
+- **Flag info**: `/current-flag` (open)
+
+*Let me know if you’d like a diagram or script to automate this setup!*
 
 ---
 

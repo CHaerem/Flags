@@ -69,9 +69,34 @@ def current_flag():
         logging.error(f"Error reading flag.json: {e}")
         return jsonify({'status': 'error', 'message': 'Could not read current flag info.'}), 500
 
+# Helper function for changing the flag
+from flask import current_app
+
+def _change_flag_internal(country):
+    if not country:
+        return jsonify({'status': 'error', 'message': 'Country not provided'}), 400
+    try:
+        success = update_flag_safely(country, force_cleanup=True)
+        if success == 0:
+            return jsonify({'status': 'success', 'message': f'Flag changed to {country}'}), 200
+        else:
+            return jsonify({
+                'status': 'partial_success',
+                'message': f'Flag metadata updated for {country}, but physical display may not have updated'
+            }), 202
+    except Exception as e:
+        logging.error(f"Error changing flag: {str(e)}", exc_info=True)
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# SECURE endpoint for Tailscale Funnel/public
 @main.route('/change-flag', methods=['POST'])
 def change_flag():
-    # Check for country in JSON body first, then form data, then query params
+    # Require X-Flag-Token header
+    secret_token = os.environ.get('FLAG_SECRET_TOKEN') or 'your-secret-token'
+    token = request.headers.get('X-Flag-Token')
+    if not token or token != secret_token:
+        return jsonify({'status': 'error', 'message': 'Forbidden: Invalid or missing token'}), 403
+    # Check for country
     country = None
     if request.is_json:
         data = request.get_json()
@@ -80,27 +105,21 @@ def change_flag():
         country = request.form.get('country')
     else:
         country = request.args.get('country')
-    
-    if not country:
-        return jsonify({'status': 'error', 'message': 'Country not provided'}), 400
-    
-    # Run the update flag script as the current user
-    try:
-        # Force cleanup the lock file if there were recent timeouts
-        success = update_flag_safely(country, force_cleanup=True)
-        
-        if success == 0:
-            return jsonify({'status': 'success', 'message': f'Flag changed to {country}'}), 200
-        else:
-            # The update_flag_safely function returned a non-zero exit code
-            return jsonify({
-                'status': 'partial_success', 
-                'message': f'Flag metadata updated for {country}, but physical display may not have updated'
-            }), 202
-            
-    except Exception as e:
-        logging.error(f"Error changing flag: {str(e)}", exc_info=True)
-        return jsonify({'status': 'error', 'message': str(e)}), 500
+    return _change_flag_internal(country)
+
+# OPEN endpoint for local use (FlagPi.local)
+@main.route('/local-change-flag', methods=['POST'])
+def local_change_flag():
+    # No authentication required
+    country = None
+    if request.is_json:
+        data = request.get_json()
+        country = data.get('country')
+    elif request.form:
+        country = request.form.get('country')
+    else:
+        country = request.args.get('country')
+    return _change_flag_internal(country)
 
 @main.route('/config', methods=['GET'])
 def get_config():
