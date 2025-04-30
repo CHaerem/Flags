@@ -58,20 +58,15 @@ def preview():
                           use_mock=use_mock,
                           last_updated=last_updated)
 
-@main.route('/current-flag', methods=['GET'])
-def current_flag():
-    """Return the currently displayed flag/country and its info."""
-    try:
-        with open(os.path.join(os.path.dirname(__file__), 'static/data/flag.json'), 'r', encoding='utf-8') as f:
-            flag_data = json.load(f)
-        return jsonify(flag_data)
-    except Exception as e:
-        logging.error(f"Error reading flag.json: {e}")
-        return jsonify({'status': 'error', 'message': 'Could not read current flag info.'}), 500
+# --- Secure Token Helper ---
+def _require_token():
+    secret = os.environ.get('FLAG_SECRET') or 'your-secret-token'
+    token = request.headers.get('X-Flag-Token')
+    if not token or token != secret:
+        return False
+    return True
 
-# Helper function for changing the flag
-from flask import current_app
-
+# --- Shared flag change logic ---
 def _change_flag_internal(country):
     if not country:
         return jsonify({'status': 'error', 'message': 'Country not provided'}), 400
@@ -88,13 +83,10 @@ def _change_flag_internal(country):
         logging.error(f"Error changing flag: {str(e)}", exc_info=True)
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# SECURE endpoint for Tailscale Funnel/public
-@main.route('/change-flag', methods=['POST'])
-def change_flag():
-    # Require X-Flag-Token header
-    secret_token = os.environ.get('FLAG_SECRET_TOKEN') or 'your-secret-token'
-    token = request.headers.get('X-Flag-Token')
-    if not token or token != secret_token:
+# --- SECURE Endpoints under /secure/ ---
+@main.route('/secure/change-flag', methods=['POST'])
+def secure_change_flag():
+    if not _require_token():
         return jsonify({'status': 'error', 'message': 'Forbidden: Invalid or missing token'}), 403
     # Check for country
     country = None
@@ -106,6 +98,18 @@ def change_flag():
     else:
         country = request.args.get('country')
     return _change_flag_internal(country)
+
+@main.route('/secure/current-flag', methods=['GET'])
+def secure_current_flag():
+    if not _require_token():
+        return jsonify({'status': 'error', 'message': 'Forbidden: Invalid or missing token'}), 403
+    try:
+        with open(os.path.join(os.path.dirname(__file__), 'static/data/flag.json'), 'r', encoding='utf-8') as f:
+            flag_data = json.load(f)
+        return jsonify(flag_data)
+    except Exception as e:
+        logging.error(f"Error reading flag.json: {e}")
+        return jsonify({'status': 'error', 'message': 'Could not read current flag info.'}), 500
 
 # OPEN endpoint for local use (FlagPi.local)
 @main.route('/local-change-flag', methods=['POST'])
