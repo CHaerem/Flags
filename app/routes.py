@@ -113,9 +113,20 @@ def secure_current_flag():
         logging.error(f"Error reading flag.json: {e}")
         return jsonify({'status': 'error', 'message': 'Could not read current flag info.'}), 500
 
-# OPEN endpoint for local use (FlagPi.local)
-@main.route('/local-change-flag', methods=['POST'])
-def local_change_flag():
+# OPEN endpoint for local use
+@main.route('/current-flag', methods=['GET'])
+def current_flag():
+    try:
+        with open(os.path.join(os.path.dirname(__file__), 'static/data/flag.json'), 'r', encoding='utf-8') as f:
+            flag_data = json.load(f)
+        return jsonify(flag_data)
+    except Exception as e:
+        logging.error(f"Error reading flag.json: {e}")
+        return jsonify({'status': 'error', 'message': 'Could not read current flag info.'}), 500
+
+# OPEN endpoint for local use
+@main.route('/change-flag', methods=['POST'])
+def change_flag():
     # No authentication required
     country = None
     if request.is_json:
