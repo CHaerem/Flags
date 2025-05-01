@@ -1,0 +1,14 @@
+[Unit]
+Description=Tailscale Funnel for FlagPi Flask API
+After=network.target tailscaled.service
+Requires=tailscaled.service
+
+[Service]
+Type=oneshot
+ExecStartPre=/usr/bin/sleep 5
+ExecStartPre=/usr/bin/tailscale serve reset
+ExecStart=/usr/bin/tailscale funnel --bg http://localhost:80/secure
+RemainAfterExit=true
+
+[Install]
+WantedBy=multi-user.target
