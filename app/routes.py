@@ -394,7 +394,14 @@ def voice_listen():
         recognized_text = None
         matched_country = None
         
-        with sd.RawInputStream(samplerate=sample_rate, blocksize=8000, dtype='int16', channels=1, callback=callback):
+        with sd.RawInputStream(
+                samplerate=16000,
+                blocksize=8000,
+                dtype='int16',
+                channels=1,
+                device='plughw:1,0',  # Explicitly use your USB mic
+                callback=callback
+            ):
             logging.info("Listening for 10 seconds...")
             timeout_start = time.time()
             
