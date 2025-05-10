@@ -38,7 +38,117 @@ A modern, self-hosted Flask app to control a Waveshare E-Ink display (or web moc
 - **Flexible Scheduling**: Time-based intervals, update at startup
 - **Offline/Online**: Works on your LAN or via Tailscale
 - **API & Voice Control**: Secure or local endpoints, Google Home/IFTTT
+- **Voice Recognition**: Use microphone to select flags using voice commands
 - **Display Lock**: Prevents hardware conflicts
+
+---
+
+## 🎤 Voice-Driven Flag Selection
+
+The FlagPi now supports changing flags using voice commands directly through a microphone connected to the Raspberry Pi!
+
+### Setup
+
+1. **Install Dependencies**
+   - The required packages `vosk` and `sounddevice` are included in `requirements.txt`
+   - You'll need a microphone connected to your Raspberry Pi
+
+2. **Download Voice Model**
+   - Download the small English model from Vosk:
+     ```bash
+     mkdir -p models
+     cd models
+     wget https://alphacephei.com/vosk/models/vosk-model-small-en-us-0.15.zip
+     unzip vosk-model-small-en-us-0.15.zip
+     ```
+     (or use `curl -O` instead of `wget` if not available)
+
+### Using Voice Commands
+
+1. **Trigger the Voice Listener**
+   - Make a POST request to `/voice-listen` endpoint
+   - Example with curl: `curl -X POST http://FlagPi.local/voice-listen`
+
+2. **Speak Your Command**
+   - After triggering, FlagPi will listen for about 10 seconds
+   - Speak the name of a country clearly (e.g., "Change to Japan" or just "Sweden")
+   - The endpoint will listen until it recognizes a country or the 10 seconds expire
+
+3. **Response Format**
+   The endpoint returns a JSON response with the following format:
+   
+   ```json
+   {
+     "status": "success",                       // success, partial_success, not_found, timeout, error
+     "message": "Changed flag to Japan",        // Human-readable message
+     "country": "Japan",                       // Only present if a country was matched
+     "transcribed_text": "change to japan"     // The recognized speech text
+   }
+   ```
+
+### Home Assistant Integration
+
+You can use this endpoint with Home Assistant to create a complete voice control system:
+
+```yaml
+# Example configuration for Home Assistant
+
+# First, define the REST command to trigger voice listening
+rest_command:
+  flag_voice_listen:
+    url: http://192.168.1.37/voice-listen
+    method: POST
+    content_type: "application/json"
+    return_response: true
+
+# Then create an automation to handle the button press and process the response
+automation:
+  - alias: "Voice-driven flag selection"
+    trigger:
+      platform: device
+      type: turned_on
+      device_id: 6b50ed9f341615aecbbb156e37fb066f  # Your button device ID
+      entity_id: binary_sensor.flag_button_double_press
+    action:
+      # Step 1: Announce we're listening
+      - service: tts.google_translate_say
+        data:
+          entity_id: media_player.living_room_speaker
+          message: "Listening for flag request..."
+      
+      # Step 2: Call the voice listening endpoint
+      - service: rest_command.flag_voice_listen
+        response_variable: voice_response
+      
+      # Step 3: Process the response with conditional actions
+      - choose:
+          # Success case
+          - conditions:
+              - condition: template
+                value_template: "{{ voice_response.status == 'success' }}"
+            sequence:
+              - service: tts.google_translate_say
+                data:
+                  entity_id: media_player.living_room_speaker
+                  message: "{{ voice_response.message }}"
+          
+          # No country recognized case
+          - conditions:
+              - condition: template
+                value_template: "{{ voice_response.status == 'not_found' }}"
+            sequence:
+              - service: tts.google_translate_say
+                data:
+                  entity_id: media_player.living_room_speaker
+                  message: "Sorry, I couldn't recognize any country name in '{{ voice_response.transcribed_text }}'"
+        
+        # Default case (error or timeout)
+        default:
+          - service: tts.google_translate_say
+            data:
+              entity_id: media_player.living_room_speaker
+              message: "{{ voice_response.message if voice_response.message is defined else 'There was an error processing your request' }}"
+```
 
 ---
 
@@ -267,7 +377,7 @@ To deploy the flag display application to your Raspberry Pi:
    sudo systemctl status flag-api.service
    ```
 
-7. Access the web interface at `http://smartpi.local:5000/` from your local network.
+7. Access the web interface at `http://smartpi.local/` from your local network.
 
 ### Updating the Application
 

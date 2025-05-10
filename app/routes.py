@@ -4,8 +4,14 @@ load_dotenv()
 import json
 import logging
 import datetime
+import re
+import queue
+from typing import Optional, Dict, Any, Tuple
+import threading
+import time
 from flask import Blueprint, request, jsonify, render_template, send_from_directory, redirect, url_for
 import sys
+import requests
 
 # Create a Blueprint instance
 main = Blueprint('main', __name__)
@@ -245,3 +251,239 @@ def update_flag_now():
         return render_template('config.html', config=config, 
                               message=f"Error updating flag: {str(e)}", 
                               success=False)
+
+# --- Voice-based flag selection ---
+
+def match_country(text: str) -> Optional[str]:
+    """
+    Attempts to match the transcribed text to a country name.
+    
+    Args:
+        text: The transcribed text to match against country names
+        
+    Returns:
+        The matched country name or None if no match found
+    """
+    if not text:
+        return None
+    
+    # Load country data
+    country_data_path = os.path.join(os.path.dirname(__file__), 'static/data/countries.json')
+    try:
+        with open(country_data_path, 'r', encoding='utf-8') as f:
+            countries = json.load(f)
+    except Exception as e:
+        logging.error(f"Error loading countries data: {e}")
+        return None
+    
+    # Clean and normalize the input text
+    text = text.lower().strip()
+    
+    # Define keywords to identify country mentions
+    trigger_phrases = [
+        "change flag to", "change to", "switch to", "show me", 
+        "display", "i want", "give me", "set flag to"
+    ]
+    
+    # Remove trigger phrases from the text
+    for phrase in trigger_phrases:
+        text = text.replace(phrase, "").strip()
+    
+    # Try exact match first
+    for country_name in countries.keys():
+        if text == country_name.lower():
+            return country_name
+    
+    # Try 'contains' match (with word boundaries to avoid partial matches)
+    for country_name in countries.keys():
+        # Create a pattern that matches the country name as a whole word
+        pattern = r'\b' + re.escape(country_name.lower()) + r'\b'
+        if re.search(pattern, text):
+            return country_name
+    
+    # Handle common alternative names and potential voice recognition errors
+    alt_names = {
+        'usa': 'United States',
+        'us': 'United States',
+        'america': 'United States',
+        'united states of america': 'United States',
+        'uk': 'United Kingdom',
+        'england': 'United Kingdom',
+        'britain': 'United Kingdom',
+        'great britain': 'United Kingdom',
+        'uae': 'United Arab Emirates',
+        'emirates': 'United Arab Emirates',
+    }
+    
+    # Check if any alternative name is in the text
+    for alt_name, country_name in alt_names.items():
+        if alt_name in text:
+            return country_name
+    
+    # If no match found, try to find partial matches
+    best_match = None
+    best_match_score = 0
+    
+    for country_name in countries.keys():
+        # Calculate similarity - simple contains logic first
+        if country_name.lower() in text:
+            # Full country name is in the text
+            return country_name
+        
+        # Count matching words as a simple metric
+        country_words = set(country_name.lower().split())
+        text_words = set(text.split())
+        common_words = country_words.intersection(text_words)
+        
+        if len(common_words) > 0 and len(common_words) > best_match_score:
+            best_match = country_name
+            best_match_score = len(common_words)
+    
+    return best_match
+
+# Removed TTS function since Home Assistant will handle this
+
+@main.route('/voice-listen', methods=['POST'])
+def voice_listen():
+    """
+    Endpoint that listens for voice input, transcribes it, and tries to match
+    the spoken text to a country name to change the flag.
+    
+    This endpoint is Home Assistant agnostic and only handles the voice recognition
+    and flag changing functionality. The response can be used by Home Assistant
+    or any other system to provide feedback to the user.
+    """
+
+    try:
+        import sounddevice as sd
+        from vosk import Model, KaldiRecognizer
+        import numpy as np
+        
+        # Set up voice recognition
+        model_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'models/vosk-model-small-en-us-0.15')
+        
+        # Check if model exists
+        if not os.path.exists(model_path):
+            logging.error(f"Voice model not found at {model_path}")
+            return jsonify({
+                'status': 'error',
+                'message': 'Voice recognition model not found. Please download and install it.'
+            }), 500
+        
+        model = Model(model_path)
+        
+        # Audio parameters
+        sample_rate = 16000
+        duration = 10  # Record for 10 seconds
+        
+        # Initialize recognizer
+        rec = KaldiRecognizer(model, sample_rate)
+        
+        # Prepare for recording
+        q = queue.Queue()
+        
+        def callback(indata, frames, time, status):
+            if status:
+                logging.warning(f"Audio callback status: {status}")
+            if any(indata):
+                q.put(bytes(indata))
+        
+        # Start recording
+        logging.info("Starting voice recording...")
+        
+        recognized_text = None
+        matched_country = None
+        
+        with sd.RawInputStream(samplerate=sample_rate, blocksize=8000, dtype='int16', channels=1, callback=callback):
+            logging.info("Listening for 10 seconds...")
+            timeout_start = time.time()
+            
+            while time.time() < timeout_start + duration:
+                # Get audio data from queue
+                if not q.empty():
+                    data = q.get()
+                    if rec.AcceptWaveform(data):
+                        result = json.loads(rec.Result())
+                        text = result.get('text', '')
+                        if text:
+                            logging.info(f"Recognized text: {text}")
+                            recognized_text = text
+                            
+                            # Try to match the recognized text to a country
+                            country_name = match_country(text)
+                            
+                            if country_name:
+                                logging.info(f"Matched country: {country_name}")
+                                matched_country = country_name
+                                # Successfully matched a country, can stop listening
+                                break
+            
+            # Process any final audio
+            final_result = json.loads(rec.FinalResult())
+            final_text = final_result.get('text', '')
+            if final_text and not recognized_text:
+                logging.info(f"Final recognized text: {final_text}")
+                recognized_text = final_text
+                country_name = match_country(final_text)
+                if country_name:
+                    logging.info(f"Matched country from final text: {country_name}")
+                    matched_country = country_name
+        
+        # After recording completes, process the results
+        if matched_country:
+            try:
+                # Use the existing function to update the flag
+                success = update_flag_safely(matched_country, force_cleanup=True)
+                
+                if success == 0:
+                    return jsonify({
+                        'status': 'success',
+                        'message': f"Changed flag to {matched_country}",
+                        'country': matched_country,
+                        'transcribed_text': recognized_text
+                    }), 200
+                else:
+                    return jsonify({
+                        'status': 'partial_success',
+                        'message': f"Partially updated flag to {matched_country}, but display may not have updated",
+                        'country': matched_country,
+                        'transcribed_text': recognized_text
+                    }), 202
+            except Exception as e:
+                error_msg = f"Error updating flag: {str(e)}"
+                logging.error(error_msg)
+                return jsonify({
+                    'status': 'error',
+                    'message': error_msg,
+                    'transcribed_text': recognized_text
+                }), 500
+        elif recognized_text:
+            return jsonify({
+                'status': 'not_found',
+                'message': f"No country name recognized in: '{recognized_text}'",
+                'transcribed_text': recognized_text
+            }), 404
+        else:
+            return jsonify({
+                'status': 'timeout',
+                'message': "No speech detected during the listening period"
+            }), 408
+        
+    except ImportError as e:
+        missing_module = str(e).split("'")
+        if len(missing_module) > 1:
+            module_name = missing_module[1]
+        else:
+            module_name = str(e)
+        error_msg = f"Required module not found: {module_name}. Please install it with 'pip install {module_name}'."
+        logging.error(error_msg)
+        return jsonify({
+            'status': 'error',
+            'message': error_msg
+        }), 500
+    except Exception as e:
+        logging.error(f"Error in voice processing: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': f"Error processing voice: {str(e)}"
+        }), 500
