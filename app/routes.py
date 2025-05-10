@@ -395,11 +395,11 @@ def voice_listen():
         matched_country = None
         
         with sd.RawInputStream(
+                device=1,
                 samplerate=16000,
                 blocksize=8000,
                 dtype='int16',
                 channels=1,
-                device='plughw:1,0',  # Explicitly use your USB mic
                 callback=callback
             ):
             logging.info("Listening for 10 seconds...")
