@@ -1,8 +1,9 @@
-requests
-Pillow
 Flask
 flask-cors
-APScheduler==3.10.4
+requests
+Pillow
+APScheduler
 python-dotenv
 vosk
 sounddevice
+numpy
