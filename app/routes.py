@@ -369,7 +369,10 @@ def _process_audio_for_speech(model, sample_rate, duration):
     import numpy as np
     from vosk import KaldiRecognizer
     from scipy.signal import resample_poly
-    rec = KaldiRecognizer(model, 16000)  # Always use 16kHz for Vosk
+    rec = KaldiRecognizer(model, 16000)
+    rec.SetWords(True)
+    rec.SetPartialWords(True)
+    rec.SetMaxAlternatives(0)
     
     # Prepare for recording
     q = queue.Queue()
@@ -377,16 +380,17 @@ def _process_audio_for_speech(model, sample_rate, duration):
     def callback(indata, frames, time, status):
         if status:
             logging.warning(f"Audio callback status: {status}")
-        # Normalize audio to full int16 range to maximize volume for Vosk
-        max_val = np.max(np.abs(indata))
+        gain_factor = 1.5  # Try 1.5 to 3.0 for boosting quiet input
+        boosted = np.clip(indata.astype(np.float32) * gain_factor, -32767, 32767)
+        max_val = np.max(np.abs(boosted))
         if max_val > 0:
-            norm_indata = (indata.astype(np.float32) / max_val) * 32767
+            norm_indata = (boosted / max_val) * 32767
             norm_indata = norm_indata.astype(np.int16)
         else:
-            norm_indata = indata.astype(np.int16)
+            norm_indata = boosted.astype(np.int16)
         logging.info(f"Callback indata shape: {indata.shape}, dtype: {indata.dtype}, mean abs: {abs(indata).mean()}, max abs: {max_val}")
         if any(norm_indata):
-            q.put(norm_indata.copy())  # Use normalized audio for resampling
+            q.put(norm_indata.copy())
     
     # Start recording
     logging.info("Starting voice recording...")
@@ -436,8 +440,17 @@ def _process_audio_for_speech(model, sample_rate, duration):
                             logging.info(f"Matched country: {country_name}")
                             matched_country = country_name
                             break
+                # Fallback: check partials for possible matches
+                partial = json.loads(rec.PartialResult())
+                text = partial.get('partial', '')
+                if text and not recognized_text:
+                    logging.info(f"Using partial: {text}")
+                    recognized_text = text
+                    country_name = match_country(text)
+                    if country_name:
+                        matched_country = country_name
+                        break
                 else:
-                    partial = json.loads(rec.PartialResult())
                     logging.info(f"Vosk partial result: {partial}")
         final_result = json.loads(rec.FinalResult())
         logging.info(f"Vosk final result: {final_result}")
