@@ -28,12 +28,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.FLAGPI_SSH_KEY }}
 
-      - name: Add flagpi to known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H 100.90.10.118 >> ~/.ssh/known_hosts
-
       - name: Deploy to FlagPi
         run: |
-          ssh chris@100.90.10.118 \
+          ssh -o StrictHostKeyChecking=no chris@100.90.10.118 \
             "cd /home/chris/Flags && git pull && sudo systemctl restart flag-api.service"
