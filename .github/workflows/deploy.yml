@@ -20,8 +20,10 @@ jobs:
           tags: tag:ci
           version: latest
 
-      - name: Verify Tailscale connection
-        run: tailscale status
+      - name: Debug Tailscale
+        run: |
+          tailscale status
+          tailscale ip -4
 
       - name: Deploy to FlagPi (Tailscale SSH)
         run: |
