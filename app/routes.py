@@ -385,8 +385,7 @@ def _process_audio_for_speech(model, sample_rate, duration):
     recognized_text = None
     matched_country = None
     
-    # Use a lower sample rate and blocksize to avoid input overflow on Pi
-    sample_rate = 16000
+    # Use the sample_rate and blocksize passed as arguments (do not override)
     blocksize = 1024
     with sd.InputStream(
             samplerate=sample_rate,
@@ -396,7 +395,7 @@ def _process_audio_for_speech(model, sample_rate, duration):
             blocksize=blocksize,
             callback=callback
         ):
-        logging.info(f"Listening for {duration} seconds on device 1 (USB mic) at 16kHz, blocksize 1024...")
+        logging.info(f"Listening for {duration} seconds on device 1 (USB mic) at {sample_rate}Hz, blocksize 1024...")
         timeout_start = time.time()
         
         while time.time() < timeout_start + duration:
