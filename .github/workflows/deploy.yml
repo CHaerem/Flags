@@ -25,8 +25,8 @@ jobs:
 
       - name: Deploy to FlagPi
         run: |
-          ssh chris@flagpi '
-          cd /home/chris/Flags &&
-          git pull &&
-          sudo systemctl restart flag-api.service
+          tailscale ssh chris@flagpi '
+            cd /home/chris/Flags &&
+            git pull &&
+            sudo systemctl restart flag-api.service
           '
