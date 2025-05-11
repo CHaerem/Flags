@@ -25,4 +25,4 @@ jobs:
 
       - name: Deploy to FlagPi
         run: |
-          tailscale ssh -o ConnectTimeout=30 chris@100.90.10.118 "cd /home/chris/Flags && git pull && sudo systemctl restart flag-api.service"
+          tailscale ssh chris@100.90.10.118 "cd /home/chris/Flags && git pull && sudo systemctl restart flag-api.service"
