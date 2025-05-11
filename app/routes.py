@@ -377,9 +377,16 @@ def _process_audio_for_speech(model, sample_rate, duration):
     def callback(indata, frames, time, status):
         if status:
             logging.warning(f"Audio callback status: {status}")
-        logging.info(f"Callback indata shape: {indata.shape}, dtype: {indata.dtype}, mean abs: {abs(indata).mean()}, max abs: {np.max(np.abs(indata))}")
-        if any(indata):
-            q.put(indata.copy())  # Keep as numpy array for resampling
+        # Normalize audio to full int16 range to maximize volume for Vosk
+        max_val = np.max(np.abs(indata))
+        if max_val > 0:
+            norm_indata = (indata.astype(np.float32) / max_val) * 32767
+            norm_indata = norm_indata.astype(np.int16)
+        else:
+            norm_indata = indata.astype(np.int16)
+        logging.info(f"Callback indata shape: {indata.shape}, dtype: {indata.dtype}, mean abs: {abs(indata).mean()}, max abs: {max_val}")
+        if any(norm_indata):
+            q.put(norm_indata.copy())  # Use normalized audio for resampling
     
     # Start recording
     logging.info("Starting voice recording...")
