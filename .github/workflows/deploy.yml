@@ -16,7 +16,7 @@ jobs:
         uses: tailscale/github-action@v3
         with:
           oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_SECRET }}
+          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_CLIENT_SECRET }}
           version: latest
 
       - name: Deploy to FlagPi
