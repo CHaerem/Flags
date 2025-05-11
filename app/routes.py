@@ -369,7 +369,13 @@ def _process_audio_for_speech(model, sample_rate, duration):
     import numpy as np
     from vosk import KaldiRecognizer
     from scipy.signal import resample_poly
-    rec = KaldiRecognizer(model, 16000)
+
+    # Load country names from your existing JSON
+    country_data_path = os.path.join(os.path.dirname(__file__), 'static/data/countries.json')
+    with open(country_data_path, 'r', encoding='utf-8') as f:
+        countries = list(json.load(f).keys())
+    # Use lower-case words only and pass to the recognizer
+    rec = KaldiRecognizer(model, 16000, json.dumps([c.lower() for c in countries]))
     rec.SetWords(True)
     rec.SetPartialWords(True)
     rec.SetMaxAlternatives(0)
