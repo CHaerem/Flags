@@ -22,7 +22,7 @@ jobs:
 
       - name: Deploy to FlagPi
         run: |
-          ssh -o StrictHostKeyChecking=no chris@flagpi.corgi-climb.ts.net '
+          ssh -o StrictHostKeyChecking=no chris@flagpi '
           cd /home/chris/Flags &&
           git pull &&
           sudo systemctl restart flag-api.service
