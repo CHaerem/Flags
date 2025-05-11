@@ -377,7 +377,7 @@ def _process_audio_for_speech(model, sample_rate, duration):
     def callback(indata, frames, time, status):
         if status:
             logging.warning(f"Audio callback status: {status}")
-        logging.info(f"Callback indata shape: {indata.shape}, dtype: {indata.dtype}, mean abs: {abs(indata).mean()}")
+        logging.info(f"Callback indata shape: {indata.shape}, dtype: {indata.dtype}, mean abs: {abs(indata).mean()}, max abs: {np.max(np.abs(indata))}")
         if any(indata):
             q.put(indata.copy())  # Keep as numpy array for resampling
     
@@ -402,12 +402,15 @@ def _process_audio_for_speech(model, sample_rate, duration):
         while time.time() < timeout_start + duration:
             if not q.empty():
                 data = q.get()
+                logging.info(f"Original audio block shape: {data.shape}, dtype: {data.dtype}, mean abs: {np.mean(np.abs(data))}, max abs: {np.max(np.abs(data))}")
                 # Resample if needed
                 if sample_rate != 16000:
-                    # Convert to float32 for resampling, then back to int16
                     data_float = data.astype(np.float32)
                     resampled = resample_poly(data_float, 16000, int(sample_rate), axis=0)
+                    logging.info(f"Resampled audio block shape: {resampled.shape}, dtype: {resampled.dtype}, mean abs: {np.mean(np.abs(resampled))}, max abs: {np.max(np.abs(resampled))}")
                     data = resampled.astype(np.int16)
+                else:
+                    logging.info("No resampling needed, using original audio block.")
                 # Vosk expects bytes
                 data_bytes = data.tobytes()
                 if rec.AcceptWaveform(data_bytes):
