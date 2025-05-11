@@ -379,6 +379,7 @@ def _process_audio_for_speech(model, sample_rate, duration):
     rec.SetWords(True)
     rec.SetPartialWords(True)
     rec.SetMaxAlternatives(0)
+    rec.SetSpkModel(None)
     
     # Prepare for recording
     q = queue.Queue()
@@ -386,7 +387,7 @@ def _process_audio_for_speech(model, sample_rate, duration):
     def callback(indata, frames, time, status):
         if status:
             logging.warning(f"Audio callback status: {status}")
-        gain_factor = 1.5  # Try 1.5 to 3.0 for boosting quiet input
+        gain_factor = 2.5  # Increased gain for quiet mic
         boosted = np.clip(indata.astype(np.float32) * gain_factor, -32767, 32767)
         max_val = np.max(np.abs(boosted))
         if max_val > 0:
@@ -415,7 +416,6 @@ def _process_audio_for_speech(model, sample_rate, duration):
         ):
         logging.info(f"Listening for {duration} seconds on device 1 (USB mic) at {sample_rate}Hz, blocksize 1024...")
         timeout_start = time.time()
-        partial_text = None
         while time.time() < timeout_start + duration:
             if not q.empty():
                 data = q.get()
@@ -434,47 +434,16 @@ def _process_audio_for_speech(model, sample_rate, duration):
                     logging.info(f"Flattened audio block to shape: {data.shape}, dtype: {data.dtype}")
                 # Vosk expects bytes
                 data_bytes = data.tobytes()
-                if rec.AcceptWaveform(data_bytes):
-                    result = json.loads(rec.Result())
-                    logging.info(f"Vosk interim result: {result}")
-                    text = result.get('text', '')
-                    if text:
-                        logging.info(f"Recognized text: {text}")
-                        recognized_text = text
-                        country_name = match_country(text)
-                        if country_name:
-                            logging.info(f"Matched country: {country_name}")
-                            matched_country = country_name
-                            break
-                # Fallback: check partials for possible matches
-                partial = json.loads(rec.PartialResult())
-                text = partial.get('partial', '')
-                if text:
-                    partial_text = text
-                    logging.info(f"Vosk partial: {text}")
-                    country_name = match_country(text)
-                    if country_name:
-                        recognized_text = text
-                        matched_country = country_name
-                        break
-                else:
-                    logging.info(f"Vosk partial result: {partial}")
+                rec.AcceptWaveform(data_bytes)
         final_result = json.loads(rec.FinalResult())
         logging.info(f"Vosk final result: {final_result}")
         final_text = final_result.get('text', '')
-        if final_text and not recognized_text:
-            logging.info(f"Final recognized text: {final_text}")
-            recognized_text = final_text
-            country_name = match_country(final_text)
-            if country_name:
-                logging.info(f"Matched country from final text: {country_name}")
-                matched_country = country_name
-        # If still nothing, try last partial
-        if not recognized_text and partial_text:
-            recognized_text = partial_text
-            country_name = match_country(partial_text)
-            if country_name:
-                matched_country = country_name
+        recognized_text = final_text if final_text else None
+        matched_country = None
+        if recognized_text:
+            matched_country = match_country(recognized_text)
+            if not matched_country:
+                logging.info(f"Recognized text with no match: {recognized_text}")
     return recognized_text, matched_country
 
 # Helper function to find a supported sample rate
