@@ -23,7 +23,19 @@ jobs:
       - name: Verify Tailscale connection
         run: tailscale status
 
+      - name: Set up SSH key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.FLAGPI_SSH_KEY }}
+
+      - name: Add flagpi to known_hosts
+        run: |
+          MACHINE_IP="$(tailscale ip -4 flagpi)"
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "$MACHINE_IP" >> ~/.ssh/known_hosts
+
       - name: Deploy to FlagPi
         run: |
-          ssh chris@100.90.10.118 \
+          MACHINE_IP="$(tailscale ip -4 flagpi)"
+          ssh chris@"$MACHINE_IP" \
             "cd /home/chris/Flags && git pull && sudo systemctl restart flag-api.service"
