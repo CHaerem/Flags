@@ -20,9 +20,12 @@ jobs:
           tags: tag:ci
           version: latest
 
+      - name: Verify Tailscale connection
+        run: tailscale status
+
       - name: Deploy to FlagPi
         run: |
-          ssh -o StrictHostKeyChecking=no chris@100.90.10.118 '
+          ssh chris@flagpi '
           cd /home/chris/Flags &&
           git pull &&
           sudo systemctl restart flag-api.service
