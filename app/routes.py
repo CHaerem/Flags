@@ -385,15 +385,18 @@ def _process_audio_for_speech(model, sample_rate, duration):
     recognized_text = None
     matched_country = None
     
+    # Use a lower sample rate and blocksize to avoid input overflow on Pi
+    sample_rate = 16000
+    blocksize = 1024
     with sd.InputStream(
             samplerate=sample_rate,
             channels=1,
             dtype='int16',
             device=1,  # Explicitly use USB mic (index 1)
-            blocksize=8000,
+            blocksize=blocksize,
             callback=callback
         ):
-        logging.info(f"Listening for {duration} seconds on device 1 (USB mic)...")
+        logging.info(f"Listening for {duration} seconds on device 1 (USB mic) at 16kHz, blocksize 1024...")
         timeout_start = time.time()
         
         while time.time() < timeout_start + duration:
@@ -449,7 +452,8 @@ def _find_supported_sample_rate():
         default_samplerate = 44100  # Fallback to a common rate
     
     # Preferred sample rates - start with the known supported ones based on your device
-    preferred_rates = [44100, 48000, 16000, 8000]
+    preferred_rates = [16000, 8000, 44100, 48000]
+    blocksize = 1024
     
     # Target rate that we'll try to use
     sample_rate = None
@@ -457,10 +461,10 @@ def _find_supported_sample_rate():
     # First try the preferred rates for Vosk
     for rate in preferred_rates:
         try:
-            logging.info(f"Testing sample rate: {rate} on device 1 (USB mic)")
+            logging.info(f"Testing sample rate: {rate} on device 1 (USB mic) with blocksize 1024")
             # Just test if we can open a stream with this rate
             # Using a context manager to ensure proper cleanup
-            with sd.InputStream(samplerate=rate, channels=1, dtype='int16', device=1, blocksize=8000):
+            with sd.InputStream(samplerate=rate, channels=1, dtype='int16', device=1, blocksize=blocksize):
                 # Successfully opened a stream with this rate
                 logging.info(f"Successfully tested sample rate: {rate} on device 1 (USB mic)")
                 sample_rate = rate
