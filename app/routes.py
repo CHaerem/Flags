@@ -418,6 +418,10 @@ def _process_audio_for_speech(model, sample_rate, duration):
                     data = resampled.astype(np.int16)
                 else:
                     logging.info("No resampling needed, using original audio block.")
+                # Ensure audio is 1D before passing to Vosk
+                if data.ndim > 1:
+                    data = data.reshape(-1)
+                    logging.info(f"Flattened audio block to shape: {data.shape}, dtype: {data.dtype}")
                 # Vosk expects bytes
                 data_bytes = data.tobytes()
                 if rec.AcceptWaveform(data_bytes):
