@@ -23,12 +23,16 @@ jobs:
       - name: Verify Tailscale connection
         run: tailscale status
 
-      - name: Set up SSH key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.FLAGPI_SSH_KEY }}
+      - name: Add SSH key and known_hosts
+        env:
+          SSH_KEY: ${{ secrets.FLAGPI_SSH_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/key
+          chmod 600 ~/.ssh/key
+          ssh-keyscan -H 100.90.10.118 >> ~/.ssh/known_hosts || true
 
       - name: Deploy to FlagPi
         run: |
-          ssh -o StrictHostKeyChecking=no chris@100.90.10.118 \
+          ssh -i ~/.ssh/key -o StrictHostKeyChecking=no chris@100.90.10.118 \
             "cd /home/chris/Flags && git pull && sudo systemctl restart flag-api.service"
