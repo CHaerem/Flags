@@ -366,9 +366,10 @@ def _process_audio_for_speech(model, sample_rate, duration):
         tuple: (recognized_text, matched_country)
     """
     import sounddevice as sd
-    # Initialize recognizer with the selected sample rate
+    import numpy as np
     from vosk import KaldiRecognizer
-    rec = KaldiRecognizer(model, sample_rate)
+    from scipy.signal import resample_poly
+    rec = KaldiRecognizer(model, 16000)  # Always use 16kHz for Vosk
     
     # Prepare for recording
     q = queue.Queue()
@@ -378,7 +379,7 @@ def _process_audio_for_speech(model, sample_rate, duration):
             logging.warning(f"Audio callback status: {status}")
         logging.info(f"Callback indata shape: {indata.shape}, dtype: {indata.dtype}, mean abs: {abs(indata).mean()}")
         if any(indata):
-            q.put(bytes(indata))
+            q.put(indata.copy())  # Keep as numpy array for resampling
     
     # Start recording
     logging.info("Starting voice recording...")
@@ -386,7 +387,6 @@ def _process_audio_for_speech(model, sample_rate, duration):
     recognized_text = None
     matched_country = None
     
-    # Use the sample_rate and blocksize passed as arguments (do not override)
     blocksize = 1024
     with sd.InputStream(
             samplerate=sample_rate,
@@ -400,32 +400,31 @@ def _process_audio_for_speech(model, sample_rate, duration):
         timeout_start = time.time()
         
         while time.time() < timeout_start + duration:
-            # Get audio data from queue
             if not q.empty():
                 data = q.get()
-                # Log interim Vosk result for debugging
-                if rec.AcceptWaveform(data):
+                # Resample if needed
+                if sample_rate != 16000:
+                    # Convert to float32 for resampling, then back to int16
+                    data_float = data.astype(np.float32)
+                    resampled = resample_poly(data_float, 16000, int(sample_rate), axis=0)
+                    data = resampled.astype(np.int16)
+                # Vosk expects bytes
+                data_bytes = data.tobytes()
+                if rec.AcceptWaveform(data_bytes):
                     result = json.loads(rec.Result())
                     logging.info(f"Vosk interim result: {result}")
                     text = result.get('text', '')
                     if text:
                         logging.info(f"Recognized text: {text}")
                         recognized_text = text
-                        
-                        # Try to match the recognized text to a country
                         country_name = match_country(text)
-                        
                         if country_name:
                             logging.info(f"Matched country: {country_name}")
                             matched_country = country_name
-                            # Successfully matched a country, can stop listening
                             break
                 else:
-                    # Log partial result for debugging
                     partial = json.loads(rec.PartialResult())
                     logging.info(f"Vosk partial result: {partial}")
-        
-        # Process any final audio
         final_result = json.loads(rec.FinalResult())
         logging.info(f"Vosk final result: {final_result}")
         final_text = final_result.get('text', '')
@@ -436,7 +435,6 @@ def _process_audio_for_speech(model, sample_rate, duration):
             if country_name:
                 logging.info(f"Matched country from final text: {country_name}")
                 matched_country = country_name
-    
     return recognized_text, matched_country
 
 # Helper function to find a supported sample rate
