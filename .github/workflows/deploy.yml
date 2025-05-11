@@ -30,12 +30,10 @@ jobs:
 
       - name: Add flagpi to known_hosts
         run: |
-          MACHINE_IP="$(tailscale ip -4 flagpi)"
           mkdir -p ~/.ssh
-          ssh-keyscan -H "$MACHINE_IP" >> ~/.ssh/known_hosts
+          ssh-keyscan -H 100.90.10.118 >> ~/.ssh/known_hosts
 
       - name: Deploy to FlagPi
         run: |
-          MACHINE_IP="$(tailscale ip -4 flagpi)"
-          ssh chris@"$MACHINE_IP" \
+          ssh chris@100.90.10.118 \
             "cd /home/chris/Flags && git pull && sudo systemctl restart flag-api.service"
