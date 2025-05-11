@@ -403,8 +403,10 @@ def _process_audio_for_speech(model, sample_rate, duration):
             # Get audio data from queue
             if not q.empty():
                 data = q.get()
+                # Log interim Vosk result for debugging
                 if rec.AcceptWaveform(data):
                     result = json.loads(rec.Result())
+                    logging.info(f"Vosk interim result: {result}")
                     text = result.get('text', '')
                     if text:
                         logging.info(f"Recognized text: {text}")
@@ -418,9 +420,14 @@ def _process_audio_for_speech(model, sample_rate, duration):
                             matched_country = country_name
                             # Successfully matched a country, can stop listening
                             break
+                else:
+                    # Log partial result for debugging
+                    partial = json.loads(rec.PartialResult())
+                    logging.info(f"Vosk partial result: {partial}")
         
         # Process any final audio
         final_result = json.loads(rec.FinalResult())
+        logging.info(f"Vosk final result: {final_result}")
         final_text = final_result.get('text', '')
         if final_text and not recognized_text:
             logging.info(f"Final recognized text: {final_text}")
