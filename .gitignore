@@ -1,0 +1,38 @@
+# Python bytecode
+**/__pycache__/
+waveshare_epd/__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# SSL certificates
+certs/
+*.pem
+*.key
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Locally generated data
+docs/data/flag.json
+current_flag.json

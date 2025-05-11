@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>E-Paper Display Preview</title>
+		<link
+			href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap"
+			rel="stylesheet"
+		/>
+		<link
+			rel="stylesheet"
+			href="{{ url_for('static', filename='css/styles.css') }}"
+		/>
+		<style>
+			body {
+				font-family: "Nunito", Arial, sans-serif;
+				line-height: 1.6;
+				max-width: 800px;
+				margin: 0 auto;
+				padding: 20px;
+				color: #333;
+			}
+			h1 {
+				color: #2c3e50;
+				border-bottom: 2px solid #eee;
+				padding-bottom: 10px;
+			}
+			.preview-container {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				border: 1px solid #ddd;
+				border-radius: 8px;
+				padding: 20px;
+				margin: 20px 0;
+				background-color: #f9f9f9;
+			}
+			.e-paper-frame {
+				position: relative;
+				width: 100%;
+				max-width: 800px;
+				background-color: #f0f0f0;
+				border: 15px solid #222;
+				border-radius: 10px;
+				box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+				overflow: hidden;
+				margin-bottom: 20px;
+			}
+			.e-paper-display {
+				width: 100%;
+				height: auto;
+				background-color: #f5f5f5;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				overflow: hidden;
+			}
+			.e-paper-display img {
+				width: 100%;
+				height: auto;
+				display: block;
+				image-rendering: -webkit-optimize-contrast; /* Sharper image rendering */
+				image-rendering: crisp-edges;
+			}
+			.no-preview {
+				color: #777;
+				text-align: center;
+				padding: 40px 20px;
+				font-style: italic;
+			}
+			.controls {
+				width: 100%;
+				display: flex;
+				justify-content: space-between;
+				margin-top: 10px;
+			}
+			.refresh-btn {
+				background-color: #28a745;
+				color: white;
+				border: none;
+				padding: 8px 16px;
+				border-radius: 4px;
+				cursor: pointer;
+				font-size: 16px;
+			}
+			.refresh-btn:hover {
+				background-color: #218838;
+			}
+			.update-btn {
+				background-color: #007bff;
+				color: white;
+				border: none;
+				padding: 8px 16px;
+				border-radius: 4px;
+				cursor: pointer;
+				font-size: 16px;
+			}
+			.update-btn:hover {
+				background-color: #0069d9;
+			}
+			.nav {
+				margin-bottom: 20px;
+			}
+			.nav a {
+				margin-right: 15px;
+				color: #2c3e50;
+				text-decoration: none;
+				font-weight: bold;
+			}
+			.nav a:hover {
+				text-decoration: underline;
+			}
+			.development-mode-notice {
+				background-color: #d9edf7;
+				color: #31708f;
+				border: 1px solid #bce8f1;
+				padding: 10px;
+				border-radius: 4px;
+				margin-bottom: 20px;
+				text-align: center;
+			}
+			.status-indicator {
+				font-size: 14px;
+				margin-top: 10px;
+				padding: 5px 10px;
+				border-radius: 4px;
+				text-align: center;
+			}
+			.status-active {
+				background-color: #d4edda;
+				color: #155724;
+			}
+			.status-inactive {
+				background-color: #f8d7da;
+				color: #721c24;
+			}
+			.last-updated {
+				font-size: 14px;
+				color: #666;
+				margin-top: 10px;
+				text-align: center;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="nav">
+			<a href="/">Home</a>
+			<a href="/config">Configuration</a>
+			{% if is_mock_display %}
+			<a href="/preview">Display Preview</a>
+			{% endif %}
+		</div>
+
+		<h1>E-Paper Display Preview</h1>
+
+		{% if use_mock %}
+		<div class="development-mode-notice">
+			<strong>Development Mode Active:</strong> Using mock display to preview
+			what would appear on the physical e-paper display.
+		</div>
+		{% else %}
+		<div
+			class="development-mode-notice"
+			style="background-color: #f8d7da; color: #721c24; border-color: #f5c6cb"
+		>
+			<strong>Development Mode Not Active:</strong> Enable mock display in
+			Configuration to preview the display.
+		</div>
+		{% endif %}
+
+		<div class="preview-container">
+			<div class="e-paper-frame">
+				<div class="e-paper-display">
+					{% if display_image %}
+					<img
+						src="data:image/png;base64,{{ display_image }}"
+						alt="E-Paper Display Preview"
+					/>
+					{% else %}
+					<div class="no-preview">
+						No display content available. Update the flag to see a preview.
+					</div>
+					{% endif %}
+				</div>
+			</div>
+
+			<div class="controls">
+				<button class="refresh-btn" onclick="refreshPreview()">
+					Refresh Preview
+				</button>
+				<button class="update-btn" onclick="updateFlag()">Update Flag</button>
+			</div>
+
+			{% if use_mock %}
+			<div class="status-indicator status-active">Mock display is active</div>
+			{% else %}
+			<div class="status-indicator status-inactive">
+				Mock display is not active
+			</div>
+			{% endif %} {% if last_updated %}
+			<div class="last-updated">Last updated: {{ last_updated }}</div>
+			{% endif %}
+		</div>
+
+		<script>
+			function refreshPreview() {
+				window.location.reload();
+			}
+
+			function updateFlag() {
+				fetch("/update-flag", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+				})
+					.then((response) => {
+						if (response.ok) {
+							setTimeout(() => {
+								window.location.reload();
+							}, 1000); // Wait for the flag update to complete
+						} else {
+							console.error("Error updating flag");
+						}
+					})
+					.catch((error) => {
+						console.error("Error:", error);
+					});
+			}
+		</script>
+	</body>
+</html>

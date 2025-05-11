@@ -1,0 +1,22 @@
+{
+  "country": "Kenya",
+  "info": "Capital: Nairobi",
+  "emoji": "\ud83c\uddf0\ud83c\uddea",
+  "timestamp": "2025-04-27 19:02:32",
+  "population": 53771300,
+  "region": "Africa",
+  "subregion": "Eastern Africa",
+  "languages": {
+    "eng": "English",
+    "swa": "Swahili"
+  },
+  "currencies": {
+    "KES": {
+      "symbol": "Sh",
+      "name": "Kenyan shilling"
+    }
+  },
+  "timezones": [
+    "UTC+03:00"
+  ]
+}

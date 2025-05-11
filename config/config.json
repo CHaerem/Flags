@@ -1,0 +1,44 @@
+{
+  "flag_display": {
+    "enabled": true,
+    "update_interval_minutes": 30,
+    "update_at_startup": true,
+    "mode": "random",
+    "fixed_country": "",
+    "last_updated": "2025-04-27 20:00:00",
+    "headless": false,
+    "use_mock": false,
+    "use_fixed_times": true,
+    "time_interval": 15,
+    "start_hour": 0,
+    "start_minute": 0
+  },
+  "display": {
+    "width": 800,
+    "height": 480
+  },
+  "server": {
+    "port": 80
+  },
+  "current_flag": {
+    "country": "Saint Barth\u00e9lemy",
+    "info": "Capital: Gustavia",
+    "emoji": "\ud83c\udde7\ud83c\uddf1",
+    "timestamp": "2025-04-27 20:00:00",
+    "population": 4255,
+    "region": "Americas",
+    "subregion": "Caribbean",
+    "languages": {
+      "fra": "French"
+    },
+    "currencies": {
+      "EUR": {
+        "symbol": "\u20ac",
+        "name": "Euro"
+      }
+    },
+    "timezones": [
+      "UTC-04:00"
+    ]
+  }
+}

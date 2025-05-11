@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Flag Display</title>
+		<link
+			href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap"
+			rel="stylesheet"
+		/>
+		<link
+			rel="stylesheet"
+			href="{{ url_for('static', filename='css/styles.css') }}"
+		/>
+		<link
+			rel="stylesheet"
+			href="{{ url_for('static', filename='css/country_picker.css') }}"
+		/>
+
+		<style>
+			.nav-menu {
+				display: flex;
+				justify-content: flex-end;
+				padding: 10px;
+				margin-bottom: 20px;
+			}
+			.nav-menu a {
+				margin-left: 15px;
+				color: #2c3e50;
+				text-decoration: none;
+				font-weight: bold;
+			}
+			.nav-menu a:hover {
+				text-decoration: underline;
+			}
+			#map-container {
+				height: 300px;
+				width: 100%;
+				margin: 20px 0;
+				border-radius: 8px;
+				overflow: hidden;
+				position: relative;
+				background-color: transparent;
+				background-image: url("{{ url_for("static", filename="img/world-map.jpg") }}");
+				background-size: cover;
+				background-position: center;
+				box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+			}
+			#map-marker {
+				position: absolute;
+				width: 20px;
+				height: 20px;
+				background-color: yellow;
+				border: 2px solid #333;
+				border-radius: 50%;
+				transform: translate(-50%, -50%);
+				box-shadow: 0 0 8px rgba(255, 255, 0, 0.8);
+				z-index: 2;
+			}
+			#country-label {
+				position: absolute;
+				background-color: rgba(0, 0, 0, 0.6);
+				color: white;
+				padding: 3px 8px;
+				border-radius: 4px;
+				font-size: 14px;
+				transform: translateX(-50%);
+				z-index: 3;
+				white-space: nowrap;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="nav-menu">
+			<a href="/">Home</a>
+			<a href="/config">Configuration</a>
+			{% if is_mock_display %}
+			<a href="/preview">Display Preview</a>
+			{% endif %}
+		</div>
+
+		<div class="container">
+			<div id="loading-container" class="loading">
+				<div class="spinner"></div>
+			</div>
+
+			<div id="content-container" style="display: none">
+				<!-- Flag information display -->
+				<div class="flag-display">
+					<div class="flag-header">
+						<span id="emoji" class="flag-emoji"></span>
+						<h1 id="country" class="country-name"></h1>
+					</div>
+
+					<div class="country-info">
+						<div class="info-row">
+							<span class="label">Capital:</span>
+							<span id="capital" class="value">-</span>
+						</div>
+						<div class="info-row">
+							<span class="label">Population:</span>
+							<span id="population" class="value">-</span>
+						</div>
+						<div class="info-row">
+							<span class="label">Region:</span>
+							<span id="region" class="value">-</span>
+						</div>
+						<div class="info-row">
+							<span class="label">Languages:</span>
+							<span id="languages" class="value">-</span>
+						</div>
+						<div class="info-row">
+							<span class="label">Currency:</span>
+							<span id="currency" class="value">-</span>
+						</div>
+						<div class="info-row">
+							<span class="label">Timezones:</span>
+							<span id="timezones" class="value">-</span>
+						</div>
+						<div class="info-row timestamp-row">
+							<span id="timestamp" class="timestamp">Updated: -</span>
+						</div>
+					</div>
+
+					<!-- Map container to display country location -->
+					<div id="map-container">
+						<div id="map-marker"></div>
+						<div id="country-label"></div>
+					</div>
+				</div>
+
+				<!-- Flag change form with autocomplete -->
+				<div id="flag-changer" class="flag-changer">
+					<h2>Change Flag</h2>
+					<div class="form-group">
+						<label for="country-input">Enter Country Name:</label>
+						<div class="autocomplete-container">
+							<div style="display: flex; gap: 8px; align-items: center;">
+  <input
+    type="text"
+    id="country-input"
+    placeholder="e.g., Norway, Japan, Brazil"
+    autocomplete="off"
+    style="flex: 1;"
+  />
+  <button type="button" id="country-picker-btn" class="btn btn-secondary" aria-label="Pick country from list" style="padding: 6px 12px; font-size: 1.1em;">🌍</button>
+</div>
+<div id="country-suggestions" class="autocomplete-items"></div>
+						</div>
+					</div>
+					<button id="change-flag-btn" class="btn">Update Flag</button>
+					<div id="status-message" class="status-message hidden"></div>
+				</div>
+			</div>
+		</div>
+
+		<!-- JavaScript -->
+		<script src="{{ url_for('static', filename='js/api.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/ui.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/autocomplete.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+		<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+<script src="{{ url_for('static', filename='js/country_picker.js') }}"></script>
+	</body>
+</html>

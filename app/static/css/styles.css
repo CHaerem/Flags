@@ -1,0 +1,306 @@
+/* styles.css */
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #f8f9fa;
+    --text-color: #333;
+    --background-color: #f5f7fa;
+    --card-color: #ffffff;
+    --border-color: #e0e0e0;
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    --muted-text: #888;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --primary-color: #61a5e4;
+        --secondary-color: #2c3e50;
+        --text-color: #f5f5f5;
+        --background-color: #1a1a2e;
+        --card-color: #2c2c44;
+        --border-color: #3f3f5f;
+        --shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        --muted-text: #aaa;
+    }
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: "Nunito", sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--background-color);
+    padding: 0;
+    margin: 0;
+}
+
+.container {
+    width: 100%;
+    max-width: 600px;
+    margin: 2rem auto;
+    padding: 1rem;
+}
+
+/* Flag Display Styling */
+.flag-display {
+    background: var(--card-color);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+}
+
+.flag-header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+}
+
+.flag-emoji {
+    font-size: 4rem;
+    display: block;
+    margin: 0 auto 0.5rem;
+}
+
+.country-name {
+    font-size: 2rem;
+    color: var(--primary-color);
+}
+
+.country-info {
+    margin: 1.5rem 0;
+}
+
+.info-row {
+    display: flex;
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.75rem;
+}
+
+.label {
+    flex: 0 0 35%;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.value {
+    flex: 0 0 65%;
+}
+
+.timestamp-row {
+    border-bottom: none;
+    justify-content: flex-end;
+}
+
+.timestamp {
+    font-size: 0.85rem;
+    color: var(--muted-text);
+}
+
+/* Loading Spinner */
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 200px;
+    width: 100%;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid var(--border-color);
+    border-top: 3px solid var(--primary-color);
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Flag Changer Form */
+.flag-changer {
+    background: var(--card-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    margin-bottom: 1.5rem;
+    padding: 1.5rem;
+    position: relative; /* Added position relative for proper absolute positioning of children */
+}
+
+.flag-changer h2 {
+    margin-bottom: 1rem;
+    color: var(--primary-color);
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-family: inherit;
+    background-color: var(--secondary-color);
+    color: var(--text-color);
+}
+
+.btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.btn:hover {
+    background-color: #2980b9;
+}
+
+.btn:disabled {
+    background-color: #95a5a6;
+    cursor: not-allowed;
+}
+
+.status-message {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Autocomplete Styles - Fixed Version */
+.autocomplete-container {
+    position: relative;
+    width: 100%;
+}
+
+/* Styles for country-suggestions container */
+#country-suggestions {
+    position: absolute;
+    border: 1px solid var(--border-color);
+    border-top: none;
+    z-index: 1000; /* Increased z-index to ensure it's above all other content */
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: var(--card-color);
+    border-radius: 0 0 4px 4px;
+    box-shadow: var(--shadow);
+}
+
+#country-suggestions div {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+}
+
+#country-suggestions div:last-child {
+    border-bottom: none;
+}
+
+#country-suggestions div:hover {
+    background-color: var(--secondary-color);
+}
+
+.autocomplete-items {
+    position: absolute;
+    border: 1px solid var(--border-color);
+    border-top: none;
+    z-index: 99;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: var(--card-color);
+    border-radius: 0 0 4px 4px;
+    box-shadow: var(--shadow);
+}
+
+.autocomplete-items div {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.autocomplete-items div:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-items div:hover {
+    background-color: var(--secondary-color);
+}
+
+.autocomplete-active {
+    background-color: var(--primary-color) !important;
+    color: #ffffff;
+}
+
+.autocomplete-emoji {
+    margin-right: 10px;
+    font-size: 1.2em;
+    display: inline-block;
+    min-width: 25px;
+    text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+    .country-name {
+        font-size: 1.5rem;
+    }
+    .flag-emoji {
+        font-size: 3.5rem;
+    }
+    .flag-display {
+        padding: 1rem;
+    }
+    .info-row {
+        flex-direction: column;
+    }
+    .label {
+        margin-bottom: 0.25rem;
+    }
+}

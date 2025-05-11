@@ -1,0 +1,2 @@
+# Ignore large model files for voice recognition
+vosk-model-*/
