@@ -14,8 +14,13 @@ from apscheduler.triggers.cron import CronTrigger
 from flask import Flask
 
 # Configure logging
+log_format = '%(asctime)s - %(levelname)s - %(name)s - %(message)s'
 logging.basicConfig(level=logging.INFO,
-                   format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+                   format=log_format,
+                   handlers=[
+                       logging.StreamHandler(),
+                       logging.FileHandler('flask_api.log', mode='a')
+                   ])
 logger = logging.getLogger(__name__)
 
 # Add the current directory to the path for imports
