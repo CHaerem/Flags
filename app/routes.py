@@ -389,11 +389,11 @@ def _process_audio_for_speech(model, sample_rate, duration):
             samplerate=sample_rate,
             channels=1,
             dtype='int16',
-            device=None,
+            device=1,  # Explicitly use USB mic (index 1)
             blocksize=8000,
             callback=callback
         ):
-        logging.info(f"Listening for {duration} seconds...")
+        logging.info(f"Listening for {duration} seconds on device 1 (USB mic)...")
         timeout_start = time.time()
         
         while time.time() < timeout_start + duration:
@@ -457,12 +457,12 @@ def _find_supported_sample_rate():
     # First try the preferred rates for Vosk
     for rate in preferred_rates:
         try:
-            logging.info(f"Testing sample rate: {rate}")
+            logging.info(f"Testing sample rate: {rate} on device 1 (USB mic)")
             # Just test if we can open a stream with this rate
             # Using a context manager to ensure proper cleanup
-            with sd.InputStream(samplerate=rate, channels=1, dtype='int16', device=None, blocksize=8000):
+            with sd.InputStream(samplerate=rate, channels=1, dtype='int16', device=1, blocksize=8000):
                 # Successfully opened a stream with this rate
-                logging.info(f"Successfully tested sample rate: {rate}")
+                logging.info(f"Successfully tested sample rate: {rate} on device 1 (USB mic)")
                 sample_rate = rate
                 break
         except Exception as e:
