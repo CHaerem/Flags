@@ -376,6 +376,7 @@ def _process_audio_for_speech(model, sample_rate, duration):
     def callback(indata, frames, time, status):
         if status:
             logging.warning(f"Audio callback status: {status}")
+        logging.info(f"Callback indata shape: {indata.shape}, dtype: {indata.dtype}, mean abs: {abs(indata).mean()}")
         if any(indata):
             q.put(bytes(indata))
     
