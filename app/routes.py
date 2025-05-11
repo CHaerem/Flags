@@ -384,12 +384,9 @@ def _process_audio_for_speech(model, sample_rate, duration):
             norm_indata = norm_indata.astype(np.int16)
         else:
             norm_indata = indata.astype(np.int16)
-        # Apply a simple noise gate: zero out very low values (below 5% of max)
-        noise_threshold = 0.05 * 32767
-        norm_indata[np.abs(norm_indata) < noise_threshold] = 0
         logging.info(f"Callback indata shape: {indata.shape}, dtype: {indata.dtype}, mean abs: {abs(indata).mean()}, max abs: {max_val}")
         if any(norm_indata):
-            q.put(norm_indata.copy())  # Use normalized and noise-gated audio for resampling
+            q.put(norm_indata.copy())  # Use normalized audio for resampling
     
     # Start recording
     logging.info("Starting voice recording...")
@@ -425,14 +422,6 @@ def _process_audio_for_speech(model, sample_rate, duration):
                 if data.ndim > 1:
                     data = data.reshape(-1)
                     logging.info(f"Flattened audio block to shape: {data.shape}, dtype: {data.dtype}")
-                # After resampling and flattening
-                # Apply a simple median filter to smooth out spikes (optional, helps with noisy mics)
-                try:
-                    from scipy.signal import medfilt
-                    if data.size > 5:
-                        data = medfilt(data, kernel_size=5)
-                except ImportError:
-                    pass
                 # Vosk expects bytes
                 data_bytes = data.tobytes()
                 if rec.AcceptWaveform(data_bytes):
