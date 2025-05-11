@@ -1,0 +1,27 @@
+name: Deploy to FlagPi
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Tailscale
+        uses: tailscale/github-action@v2
+        with:
+          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-client-secret: ${{ secrets.TAILSCALE_OAUTH_CLIENT_SECRET }}
+
+      - name: Deploy to FlagPi
+        run: |
+          ssh -o StrictHostKeyChecking=no chris@flagpi.corgi-climb.ts.net '
+          cd /home/chris/Flags &&
+          git pull &&
+          sudo systemctl restart flag-api.service
+          '
