@@ -415,7 +415,7 @@ def _process_audio_for_speech(model, sample_rate, duration):
         ):
         logging.info(f"Listening for {duration} seconds on device 1 (USB mic) at {sample_rate}Hz, blocksize 1024...")
         timeout_start = time.time()
-        
+        partial_text = None
         while time.time() < timeout_start + duration:
             if not q.empty():
                 data = q.get()
@@ -449,11 +449,12 @@ def _process_audio_for_speech(model, sample_rate, duration):
                 # Fallback: check partials for possible matches
                 partial = json.loads(rec.PartialResult())
                 text = partial.get('partial', '')
-                if text and not recognized_text:
-                    logging.info(f"Using partial: {text}")
-                    recognized_text = text
+                if text:
+                    partial_text = text
+                    logging.info(f"Vosk partial: {text}")
                     country_name = match_country(text)
                     if country_name:
+                        recognized_text = text
                         matched_country = country_name
                         break
                 else:
@@ -467,6 +468,12 @@ def _process_audio_for_speech(model, sample_rate, duration):
             country_name = match_country(final_text)
             if country_name:
                 logging.info(f"Matched country from final text: {country_name}")
+                matched_country = country_name
+        # If still nothing, try last partial
+        if not recognized_text and partial_text:
+            recognized_text = partial_text
+            country_name = match_country(partial_text)
+            if country_name:
                 matched_country = country_name
     return recognized_text, matched_country
 
