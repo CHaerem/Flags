@@ -493,7 +493,7 @@ def voice_listen():
         import numpy as np
         
         # Set up voice recognition
-        model_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'models/vosk-model-en-us-0.22')
+        model_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'models/vosk-model-small-en-us-0.15')
         
         # Check if model exists
         if not os.path.exists(model_path):
