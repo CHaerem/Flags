@@ -17,7 +17,7 @@ jobs:
         with:
           oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
           oauth-secret: ${{ secrets.TAILSCALE_OAUTH_CLIENT_SECRET }}
-          tags: tag:ci
+          tags: tag:flagpi
           version: latest
 
       - name: Debug Tailscale
@@ -27,5 +27,5 @@ jobs:
 
       - name: Deploy to FlagPi (Tailscale SSH)
         run: |
-          ssh -o StrictHostKeyChecking=no chris@100.90.10.118 \
+          ssh -o StrictHostKeyChecking=no chris@flagpi \
             'cd /home/chris/Flags && git pull && sudo systemctl restart flag-api.service'
