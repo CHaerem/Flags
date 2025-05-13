@@ -2,39 +2,35 @@ name: Deploy to FlagPi
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      # --- 1. Checkout code ---------------------------------------------------
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Tailscale
-        uses: tailscale/github-action@v3
+      # --- 2. Start Tailscale --------------------------------------------------
+      - uses: tailscale/github-action@v3
         with:
-          oauth-client-id: ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
-          oauth-secret: ${{ secrets.TAILSCALE_OAUTH_CLIENT_SECRET }}
-          tags: tag:ci
-          version: latest
+          oauth-client-id:  ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
+          oauth-secret:     ${{ secrets.TAILSCALE_OAUTH_CLIENT_SECRET }}
+          tags:             tag:ci
+          version:          latest
 
-      - name: Set up SSH key
-        env:
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+      # --- 3. Prepare SSH key --------------------------------------------------
+      - name: Prepare SSH key file
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H 100.90.10.118 >> ~/.ssh/known_hosts
           echo "${{ secrets.FLAGPI_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/github_actions
           chmod 600 ~/.ssh/github_actions
-          eval "$(ssh-agent -a $SSH_AUTH_SOCK)"
-          ssh-add ~/.ssh/github_actions
 
+      # --- 4. Deploy -----------------------------------------------------------
       - name: Deploy to FlagPi
-        env:
-          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
-          ssh chris@100.90.10.118 \
+          ssh -i ~/.ssh/github_actions chris@100.90.10.118 \
             'cd /home/chris/Flags && git pull && sudo systemctl restart flag-api.service'
