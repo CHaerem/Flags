@@ -1,40 +1,24 @@
 name: Deploy to FlagPi
-
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # --- 1. Checkout code ---------------------------------------------------
-      - name: Checkout
-        uses: actions/checkout@v4
+    - uses: actions/checkout@v4
 
-      # --- 2. Start Tailscale --------------------------------------------------
-      - uses: tailscale/github-action@v3
-        with:
-          oauth-client-id:  ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
-          oauth-secret:     ${{ secrets.TAILSCALE_OAUTH_CLIENT_SECRET }}
-          tags:             tag:ci
-          version:          latest
-          args:             --ssh
+    - name: Join tailnet (with SSH)
+      uses: tailscale/github-action@v3
+      with:
+        oauth-client-id:  ${{ secrets.TAILSCALE_OAUTH_CLIENT_ID }}
+        oauth-secret:     ${{ secrets.TAILSCALE_OAUTH_CLIENT_SECRET }}
+        tags:             tag:ci
+        args:             --ssh          # <-- keep!
 
-      # --- 3. Prepare SSH key --------------------------------------------------
-      - name: Prepare SSH key file
-        run: |
-          mkdir -p ~/.ssh
-          # Add host-key, but don’t fail if the scan can’t reach the Pi yet
-          ssh-keyscan -H 100.90.10.118 2>/dev/null >> ~/.ssh/known_hosts || true
-      
-          # Decode secret (single-line base64) → key file
-          echo "${{ secrets.FLAGPI_SSH_KEY_B64 }}" | base64 -d - > ~/.ssh/github_actions
-          chmod 600 ~/.ssh/github_actions
-
-      # --- 4. Deploy -----------------------------------------------------------
-      - name: Deploy to FlagPi
-        run: |
-          ssh -i ~/.ssh/github_actions chris@100.90.10.118 \
-            'cd /home/chris/Flags && git pull && sudo systemctl restart flag-api.service'
+    - name: Pull & restart on FlagPi
+      run: |
+        tailscale ssh chris@100.90.10.118 \
+          'cd ~/Flags && git pull && sudo systemctl restart flag-api.service'
