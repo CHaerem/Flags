@@ -28,15 +28,11 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H 100.90.10.118 >> ~/.ssh/known_hosts
 
-          echo "Writing SSH key from flattened GitHub Secret..."
-          printf "%b" "${{ secrets.FLAGPI_SSH_KEY }}" > ~/.ssh/github_actions
+          echo "${{ secrets.FLAGPI_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/github_actions
           chmod 600 ~/.ssh/github_actions
 
-          echo "Starting ssh-agent..."
           ssh-agent -a $SSH_AUTH_SOCK
-
-          echo "Trying ssh-add..."
-          ssh-add ~/.ssh/github_actions || { echo "❌ ssh-add failed"; cat ~/.ssh/github_actions; exit 1; }
+          ssh-add ~/.ssh/github_actions || { echo "❌ ssh-add failed"; exit 1; }
 
       - name: Deploy to FlagPi
         env:
