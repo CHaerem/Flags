@@ -25,12 +25,18 @@ jobs:
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
+          set -e
           mkdir -p ~/.ssh
           ssh-keyscan -H 100.90.10.118 >> ~/.ssh/known_hosts
-          echo "${{ secrets.FLAGPI_SSH_KEY }}" > ~/.ssh/github_actions
+
+          # Write key using heredoc to preserve line breaks
+          cat << 'EOF' > ~/.ssh/github_actions
+${{ secrets.FLAGPI_SSH_KEY }}
+EOF
+
           chmod 600 ~/.ssh/github_actions
-          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-add ~/.ssh/github_actions
+          ssh-agent -a $SSH_AUTH_SOCK
+          ssh-add ~/.ssh/github_actions || (echo "ssh-add failed"; cat ~/.ssh/github_actions; exit 1)
 
       - name: Deploy to FlagPi
         env:
