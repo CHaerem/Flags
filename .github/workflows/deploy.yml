@@ -20,6 +20,7 @@ jobs:
           oauth-secret:     ${{ secrets.TAILSCALE_OAUTH_CLIENT_SECRET }}
           tags:             tag:ci
           version:          latest
+          args:             --ssh
 
       # --- 3. Prepare SSH key --------------------------------------------------
       - name: Prepare SSH key file
