@@ -25,8 +25,11 @@ jobs:
       - name: Prepare SSH key file
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H 100.90.10.118 >> ~/.ssh/known_hosts
-          echo "${{ secrets.FLAGPI_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/github_actions
+          # Add host-key, but don’t fail if the scan can’t reach the Pi yet
+          ssh-keyscan -H 100.90.10.118 2>/dev/null >> ~/.ssh/known_hosts || true
+      
+          # Decode secret (single-line base64) → key file
+          echo "${{ secrets.FLAGPI_SSH_KEY_B64 }}" | base64 -d - > ~/.ssh/github_actions
           chmod 600 ~/.ssh/github_actions
 
       # --- 4. Deploy -----------------------------------------------------------
