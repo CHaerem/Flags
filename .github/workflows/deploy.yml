@@ -21,18 +21,16 @@ jobs:
           tags: tag:ci
           version: latest
 
-      - name: Set up SSH agent
+      - name: Set up SSH key
         env:
           SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H 100.90.10.118 >> ~/.ssh/known_hosts
-
           echo "${{ secrets.FLAGPI_SSH_KEY_B64 }}" | base64 -d > ~/.ssh/github_actions
           chmod 600 ~/.ssh/github_actions
-
-          ssh-agent -a $SSH_AUTH_SOCK
-          ssh-add ~/.ssh/github_actions || { echo "❌ ssh-add failed"; exit 1; }
+          eval "$(ssh-agent -a $SSH_AUTH_SOCK)"
+          ssh-add ~/.ssh/github_actions
 
       - name: Deploy to FlagPi
         env:
