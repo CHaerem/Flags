@@ -28,7 +28,7 @@ jobs:
       - name: Set up SSH key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.FLAGPI_SSH_KEY }}" > ~/.ssh/id_ed25519
+          printf "%s\n" "${{ secrets.FLAGPI_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H 100.90.10.118 >> ~/.ssh/known_hosts
 
