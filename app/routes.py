@@ -613,3 +613,24 @@ def _handle_voice_recognition_result(recognized_text, matched_country):
             'status': 'timeout',
             'message': "No speech detected during the listening period"
         }), 408
+
+
+@main.route('/history')
+def flag_history():
+    """Return or display the history of previously shown flags."""
+    history_path = os.path.join(os.path.dirname(__file__), 'static', 'data', 'flag_history.json')
+    history = []
+    try:
+        with open(history_path, 'r', encoding='utf-8') as f:
+            history = json.load(f)
+    except FileNotFoundError:
+        history = []
+    except Exception as e:
+        logging.error(f"Error reading flag history: {e}")
+
+    if request.headers.get('Accept') == 'application/json' or request.args.get('format') == 'json':
+        return jsonify(history)
+
+    # Show most recent first
+    history = list(reversed(history))
+    return render_template('history.html', history=history)

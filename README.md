@@ -40,6 +40,7 @@ A modern, self-hosted Flask app to control a Waveshare E-Ink display (or web moc
 - **API & Voice Control**: Secure or local endpoints, Google Home/IFTTT
 - **Voice Recognition**: Use microphone to select flags using voice commands
 - **Display Lock**: Prevents hardware conflicts
+- **History Tracking**: View a list of previously displayed flags
 
 ---
 
@@ -250,6 +251,7 @@ project-root/
 ### Autocomplete & Map
 - Country input fields use offline autocomplete with emoji flags
 - The web UI shows a world map and highlights the selected country
+- View past flags at `/history`
 
 ### API Endpoints
 - `POST /change-flag` (JSON or form): Change displayed flag
