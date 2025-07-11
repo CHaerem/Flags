@@ -21,4 +21,4 @@ jobs:
     - name: Pull & restart on FlagPi
       run: |
         tailscale ssh chris@100.90.10.118 \
-          'cd ~/Flags && git pull && sudo systemctl restart flag-api.service'
+          'cd ~/Flags && git pull origin trunk && sudo systemctl restart flag-api.service'
