@@ -36,3 +36,4 @@ certs/
 # Locally generated data
 docs/data/flag.json
 current_flag.json
+node_modules/

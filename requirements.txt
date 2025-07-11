@@ -7,3 +7,4 @@ python-dotenv
 vosk
 sounddevice
 numpy
+pytest

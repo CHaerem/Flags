@@ -1,0 +1,20 @@
+{
+  "name": "flags",
+  "version": "1.0.0",
+  "description": "A modern, self-hosted Flask app to control a Waveshare E-Ink display (or web mock) showing the flag of any country. Supports Google Home voice control, IFTTT, and secure or local API access.",
+  "main": "index.js",
+  "directories": {
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "jest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "jest": "^30.0.4",
+    "jsdom": "^26.1.0"
+  }
+}
