@@ -13,6 +13,8 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Config file path
 CONFIG_FILE = os.path.join(BASE_DIR, "config", "config.json")
+# Path to store history of displayed flags
+FLAG_HISTORY_FILE = os.path.join(BASE_DIR, "app", "static", "data", "flag_history.json")
 
 # Create a backup of the original config file if it doesn't exist
 def _ensure_config_file():
@@ -74,6 +76,29 @@ def save_config(config):
         logger.error(f"Error saving config: {e}")
         return False
 
+def load_flag_history():
+    """Load the flag history from file."""
+    if os.path.exists(FLAG_HISTORY_FILE):
+        try:
+            with open(FLAG_HISTORY_FILE, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            logger.error(f"Error loading flag history: {e}")
+    return []
+
+def append_flag_history(entry, max_entries=100):
+    """Append a new entry to the flag history."""
+    history = load_flag_history()
+    history.append(entry)
+    history = history[-max_entries:]
+    try:
+        os.makedirs(os.path.dirname(FLAG_HISTORY_FILE), exist_ok=True)
+        with open(FLAG_HISTORY_FILE, 'w') as f:
+            json.dump(history, f, indent=2)
+    except Exception as e:
+        logger.error(f"Error saving flag history: {e}")
+    return history
+
 def update_current_flag(config, country_data):
     """Update the current flag information in the config"""
     if not config or not country_data:
@@ -85,6 +110,13 @@ def update_current_flag(config, country_data):
         "emoji": country_data.get('flag', ''),
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
+
+    # Append to history file
+    append_flag_history({
+        "country": config['current_flag']['country'],
+        "emoji": config['current_flag']['emoji'],
+        "timestamp": config['current_flag']['timestamp']
+    })
     
     # Add extended information
     if 'population' in country_data:
