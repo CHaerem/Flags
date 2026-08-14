@@ -51,6 +51,17 @@ class RaspberryPi:
     def __init__(self):
         import spidev
         import gpiozero
+
+        # gpiozero finner ingen pin factory av seg selv på kjerner uten
+        # Raspberry Pi OS sine sysfs-stier (den leter etter en revisjonskode
+        # i /proc/cpuinfo). lgpio snakker med /dev/gpiochip og virker på
+        # mainline; vi peker eksplisitt på den før noen pinne opprettes.
+        if not os.environ.get("GPIOZERO_PIN_FACTORY"):
+            try:
+                from gpiozero.pins.lgpio import LGPIOFactory
+                gpiozero.Device.pin_factory = LGPIOFactory(chip=0)
+            except Exception:
+                pass
         
         self.SPI = spidev.SpiDev()
         self.GPIO_RST_PIN    = gpiozero.LED(self.RST_PIN)
@@ -302,9 +313,9 @@ class SunriseX3:
 
 
 if sys.version_info[0] == 2:
-    process = subprocess.Popen("cat /proc/cpuinfo | grep Raspberry", shell=True, stdout=subprocess.PIPE)
+    process = subprocess.Popen("cat /proc/cpuinfo /proc/device-tree/model 2>/dev/null | tr -d '\\000' | grep -ia raspberry", shell=True, stdout=subprocess.PIPE)
 else:
-    process = subprocess.Popen("cat /proc/cpuinfo | grep Raspberry", shell=True, stdout=subprocess.PIPE, text=True)
+    process = subprocess.Popen("cat /proc/cpuinfo /proc/device-tree/model 2>/dev/null | tr -d '\\000' | grep -ia raspberry", shell=True, stdout=subprocess.PIPE, text=True)
 output, _ = process.communicate()
 if sys.version_info[0] == 2:
     output = output.decode(sys.stdout.encoding)
